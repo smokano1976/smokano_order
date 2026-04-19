@@ -6,7 +6,6 @@
 <title>門市叫貨系統 - 雲端同步版</title>
 <style>
   body { font-family: "Microsoft JhengHei", Arial, sans-serif; padding: 15px; max-width: 1150px; margin: auto; line-height: 1.6; background-color: #f4f7f6; }
-  /* 使用說明區 */
   .help-box { background: #fff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px; font-size: 0.95em; color: #444; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
   .user-box { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
   .table-container { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto; }
@@ -16,15 +15,12 @@
   input[type="number"] { width: 55px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
   input[type="text"] { width: 95%; padding: 5px; border: 1px solid #eee; border-radius: 4px; }
   .input-actual { background-color: #e3f2fd; border: 1px solid #2196f3 !important; font-weight: bold; color: #0d47a1; }
-  
-  /* 狀態樣式 */
   .row-disabled { background-color: #f2f2f2 !important; color: #aaa !important; }
   .row-disabled input:not([type="checkbox"]) { background-color: #eee !important; color: #ccc !important; pointer-events: none; opacity: 0.6; }
   #tomorrowInfo { margin: 15px 0; font-size: 1.25em; font-weight: bold; color: #333; }
   .order-active { background-color: #fff9c4; font-weight: bold; color: #d32f2f; border: 1px solid #fbc02d; }
   .success { color: #2e7d32; font-weight: bold; }
   .formula { font-size: 0.7em; color: #999; display: block; }
-  
   .btn-save { background-color: #28a745; color: white; border: none; font-weight: bold; padding: 12px 25px; font-size: 1.1em; border-radius: 5px; cursor: pointer; }
   .history-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 12px; }
   .badge { padding: 3px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold; background: #e8f5e9; color: #2e7d32; }
@@ -39,12 +35,11 @@
 
 <h2>🏪 門市叫貨系統 (雲端同步版)</h2>
 
-<!-- 💡 補回的使用說明 -->
 <div class="help-box">
   <strong>💡 使用說明：</strong><br>
   1. <b>自動判斷</b>：依照明天日期自動設定目標（週五六日為假日模式）。<br>
   2. <b>強制模式</b>：若遇到補班日、特殊連假，請手動切換平假日標準。<br>
-  3. <b>計算與存檔</b>：即使叫貨量為 0，也請確實填寫銷售與盤點並存檔，系統會紀錄至雲端以供對帳。
+  3. <b>計算與存檔</b>：即使叫貨量為 0，也請確實填寫並存檔，系統會紀錄時間以供對帳。
 </div>
 
 <div class="user-box">
@@ -52,8 +47,7 @@
   <input type="text" id="userName" placeholder="請輸入姓名" style="padding: 8px; width: 200px; border: 1px solid #007bff; border-radius: 4px;">
 </div>
 
-<!-- 📦 到貨日期標題 -->
-<div id="tomorrowInfo">🚚 預計到貨日期：讀取雲端資料中...</div>
+<div id="tomorrowInfo">🚚 預計到貨日期：載入中...</div>
 
 <div style="margin-bottom:15px;">
   <button id="btn-auto" onclick="setMode('')">🔄 自動判斷</button>
@@ -94,7 +88,6 @@
 </div>
 
 <script>
-// --- 請更換為您的 API 網址 ---
 const API_URL = "https://script.google.com/macros/s/AKfycby-ZvkQ60TqtgXP_EmEiVmgkMO5t7qaXS6PGenEV1t0-P88cqZ88R_PT0Q8Qu2bh9J5/exec"; 
 
 const products = [
@@ -136,7 +129,7 @@ function initTable() {
     tbody.innerHTML += `
       <tr id="row${i}">
         <td><input type="checkbox" id="supply${i}" checked onchange="toggleRow(${i})"><br><span style="font-size:0.75em">供應中</span></td>
-        <td style="font-weight:bold">${p.name}<span style="font-size:0.8em;color:#007bff;display:block;">(上次叫: ${lastOrderQty})</span></td>
+        <td style="font-weight:bold">${p.name}<span class="last-order-qty" style="font-size:0.8em;color:#007bff;display:block;">(上次叫: ${lastOrderQty})</span></td>
         <td><input type="number" id="y${i}" value="${yesterdayVal}" oninput="calculate(false)"></td>
         <td><input type="number" id="in${i}" value="0" oninput="calculate(false)"></td>
         <td><input type="number" id="sale${i}" value="0" oninput="calculate(false)"></td>
@@ -168,6 +161,10 @@ async function calculate(isSaving = false) {
   let total = 0; let summary = []; let saveStocks = []; let currentDetails = [];
   const info = getTomorrowInfo();
   let hasActualInput = false;
+
+  // 取得現在時間 (時:分)
+  const now = new Date();
+  const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
 
   products.forEach((p, i) => {
     const isSupplied = document.getElementById(`supply${i}`).checked;
@@ -204,16 +201,18 @@ async function calculate(isSaving = false) {
   totalEl.innerText = `總叫貨量：${total} （✅ 已計算）`;
   
   if(isSaving) {
-    if(!hasActualInput && !confirm("⚠️ 實盤全為 0，確定要儲存嗎？")) return;
+    if(!hasActualInput && !confirm("⚠️ 實盤全為 0，確定儲存嗎？")) return;
     const todayExist = cloudHistory.find(item => formatCloudDate(item.date) === info.dateStr);
     if(todayExist && !confirm(`⚠️ ${info.dateStr} 已有存檔，確定覆蓋？`)) return;
-    if(!confirm(`確認由 ${user} 儲存？\n到貨日期：${info.dateStr}\n總叫貨量：${total}`)) return;
+    if(!confirm(`確認儲存？\n到貨日期：${info.dateStr}\n總叫貨量：${total}`)) return;
     
     document.getElementById("saveBtn").disabled = true;
     showLoading(true);
 
     const payload = {
-      date: info.dateStr, amount: total, status: true,
+      // 這裡將時間併入日期字串傳送
+      date: info.dateStr + " " + timeStr, 
+      amount: total, status: true,
       note: `填單人:${user}; ` + summary.join("; "),
       saveStocks: saveStocks, details: currentDetails
     };
@@ -237,11 +236,14 @@ function getTomorrowInfo(){
 }
 
 function formatCloudDate(rawDate) {
-  try {
-    const d = new Date(rawDate);
-    if(!isNaN(d.getTime())) return (d.getMonth() + 1) + "/" + d.getDate();
-    return rawDate;
-  } catch(e) { return rawDate; }
+  // rawDate 可能包含 "4/20 15:30" 或 ISO 格式
+  if (!rawDate) return "";
+  return rawDate.split(" ")[0].split("T")[0].replace(/^\d{4}-/, "").replace("-", "/");
+}
+
+function formatCloudTime(rawDate) {
+  if (!rawDate || !rawDate.includes(" ")) return "";
+  return rawDate.split(" ")[1].substring(0, 5); // 抓取 時:分
 }
 
 function safety(p){
@@ -265,7 +267,7 @@ function renderHistory() {
   list.innerHTML = cloudHistory.map(item => `
     <div class="history-card">
       <div class="history-header">
-        <div><b>${formatCloudDate(item.date)}</b> <span class="badge">✅ 已記錄</span></div>
+        <div><b>${item.date}</b> <span class="badge">✅ 已記錄</span></div>
         <div style="color:#007bff; font-weight:bold;">總量: ${item.amount}</div>
       </div>
       <div class="detail-grid">${item.details.map(d => `<div class="detail-item" style="${d.supplied===false?'text-decoration:line-through;color:#aaa;':''}">${d.name}: <b>${d.qty}</b></div>`).join('')}</div>
@@ -277,13 +279,16 @@ function renderHistory() {
 function exportToCSV() {
   if (cloudHistory.length === 0) return alert("無資料");
   const pNames = products.map(p => p.name);
-  let csv = "\uFEFF日期,總量,狀態," + pNames.join(",") + ",備註\n";
+  // CSV 標題增加時間欄位
+  let csv = "\uFEFF日期,時間,總量,狀態," + pNames.join(",") + ",備註\n";
   cloudHistory.forEach(item => {
+    const datePart = formatCloudDate(item.date);
+    const timePart = formatCloudTime(item.date);
     const rowDetails = pNames.map(name => {
       const found = item.details.find(d => d.name === name);
       return found ? found.qty : 0;
     });
-    csv += `${formatCloudDate(item.date)},${item.amount},已記錄,${rowDetails.join(",")},${item.note}\n`;
+    csv += `${datePart},${timePart},${item.amount},已記錄,${rowDetails.join(",")},${item.note}\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement("a");
