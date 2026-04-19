@@ -3,27 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>門市叫貨系統 - 雲端同步版</title>
+<title>門市叫貨系統 - 完整功能對帳版</title>
 <style>
-  body { font-family: "Microsoft JhengHei", Arial, sans-serif; padding: 15px; max-width: 1150px; margin: auto; line-height: 1.6; background-color: #f4f7f6; }
+  body { font-family: "Microsoft JhengHei", Arial, sans-serif; padding: 15px; max-width: 1250px; margin: auto; line-height: 1.6; background-color: #f4f7f6; }
+  
+  /* 💡 使用說明區 - 補回藍色強調色 */
   .help-box { background: #fff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px; font-size: 0.95em; color: #444; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  .help-box b { color: #007bff; font-weight: bold; } /* 這裡控制藍色字體 */
+  
   .user-box { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
   .table-container { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+  table { width: 100%; border-collapse: collapse; min-width: 1150px; }
   th, td { border: 1px solid #eee; padding: 10px; text-align: center; }
   th { background-color: #f8f9fa; }
   input[type="number"] { width: 55px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
   input[type="text"] { width: 95%; padding: 5px; border: 1px solid #eee; border-radius: 4px; }
   .input-actual { background-color: #e3f2fd; border: 1px solid #2196f3 !important; font-weight: bold; color: #0d47a1; }
+  .input-final { background-color: #fff9c4; border: 1px solid #fbc02d !important; font-weight: bold; color: #d32f2f; }
   .row-disabled { background-color: #f2f2f2 !important; color: #aaa !important; }
   .row-disabled input:not([type="checkbox"]) { background-color: #eee !important; color: #ccc !important; pointer-events: none; opacity: 0.6; }
+  .diff-neg { color: #d32f2f; font-weight: bold; }
   #tomorrowInfo { margin: 15px 0; font-size: 1.25em; font-weight: bold; color: #333; }
-  .order-active { background-color: #fff9c4; font-weight: bold; color: #d32f2f; border: 1px solid #fbc02d; }
-  .success { color: #2e7d32; font-weight: bold; }
   .formula { font-size: 0.7em; color: #999; display: block; }
   .btn-save { background-color: #28a745; color: white; border: none; font-weight: bold; padding: 12px 25px; font-size: 1.1em; border-radius: 5px; cursor: pointer; }
-  .history-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 12px; }
-  .badge { padding: 3px 10px; border-radius: 15px; font-size: 0.85em; font-weight: bold; background: #e8f5e9; color: #2e7d32; }
+  .history-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 12px; border-left: 5px solid #28a745; }
   .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; font-size: 0.9em; }
   .detail-item { background: #f8f9fa; padding: 6px; border-radius: 4px; border: 1px solid #f0f0f0; }
   .loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; font-weight:bold; }
@@ -33,13 +36,17 @@
 <body>
 <div id="loading" class="loading-overlay">☁️ 雲端同步中，請稍候...</div>
 
-<h2>🏪 門市叫貨系統 (雲端同步版)</h2>
+<h2>🏪 門市叫貨系統</h2>
 
+<!-- 💡 6 點使用說明，包含藍色強調字體 -->
 <div class="help-box">
   <strong>💡 使用說明：</strong><br>
   1. <b>自動判斷</b>：依照明天日期自動設定目標（週五六日為假日模式）。<br>
   2. <b>強制模式</b>：若遇到補班日、特殊連假，請手動切換平假日標準。<br>
-  3. <b>計算與存檔</b>：即使叫貨量為 0，也請確實填寫並存檔，系統會紀錄時間以供對帳。
+  3. <b>理論庫存</b>：自動計算「昨+到-銷」。<br>
+  4. <b>差異數</b>：顯示「實盤 - 理論」，負數代表現場缺貨，請確認是否有漏記損耗。<br>
+  5. <b>最終叫貨</b>：黃色格預設帶入建議量，若不需補貨請手動改為 <b>0</b>。<br>
+  6. <b>庫存接軌</b>：儲存紀錄後，今日<b>現場實盤</b>數值會自動成為明天的<b>昨日庫存</b>。
 </div>
 
 <div class="user-box">
@@ -50,39 +57,39 @@
 <div id="tomorrowInfo">🚚 預計到貨日期：載入中...</div>
 
 <div style="margin-bottom:15px;">
-  <button id="btn-auto" onclick="setMode('')">🔄 自動判斷</button>
-  <button id="btn-weekday" onclick="setMode('weekday')">📅 強制平日</button>
-  <button id="btn-holiday" onclick="setMode('holiday')">🎉 強制假日</button>
+  <button id="btn-auto" onclick="setMode('')">🔄 自動判斷模式</button>
+  <button id="btn-weekday" onclick="setMode('weekday')">📅 強制平日標準</button>
+  <button id="btn-holiday" onclick="setMode('holiday')">🎉 強制假日標準</button>
 </div>
 
 <div class="table-container">
   <table>
     <thead>
       <tr>
-        <th style="width: 80px;">狀態</th>
+        <th style="width: 50px;">狀態</th>
         <th>品項</th>
         <th>昨日庫存</th>
         <th>今日到貨</th>
         <th>今日銷售</th>
         <th>理論庫存<span class="formula">(昨+到-銷)</span></th>
-        <th>現場實盤<span class="formula">(藍色輸入)</span></th>
+        <th>現場實盤<span class="formula">(藍色)</span></th>
         <th>差異數</th>
-        <th>安全庫存</th>
         <th>建議叫貨</th>
-        <th style="width: 130px;">備註</th>
+        <th>最終叫貨量<span class="formula">(黃色可改)</span></th>
+        <th style="width: 100px;">備註</th>
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
   </table>
 </div>
 
-<h3 id="total" class="success">總叫貨量：0</h3>
-<button class="btn-save" id="saveBtn" onclick="calculate(true)">✅ 計算並儲存今日紀錄</button>
+<h3 id="total" style="color:#2e7d32;">最終總叫貨量：0</h3>
+<button class="btn-save" id="saveBtn" onclick="calculate(true)">✅ 確認並儲存叫貨紀錄</button>
 
 <div class="history-section" style="margin-top:40px;">
   <div style="display:flex; justify-content: space-between; align-items: center;">
-    <h3>🗓️ 雲端歷史紀錄 (最近20筆)</h3>
-    <button onclick="exportToCSV()" style="background:#607d8b; color:white; border:none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">📥 匯出 CSV</button>
+    <h3>🗓️ 雲端叫貨歷史 (最近20筆)</h3>
+    <button onclick="exportToCSV()" style="background:#607d8b; color:white; border:none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">📥 匯出 CSV 表格</button>
   </div>
   <div id="historyList"></div>
 </div>
@@ -101,22 +108,33 @@ let forceMode = "";
 let cloudHistory = [];
 let lastCloudStock = [];
 
+function toTaiwanTime(raw) {
+  if (!raw) return "無日期";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw.toString();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const h = d.getHours().toString().padStart(2, '0');
+  const min = d.getMinutes().toString().padStart(2, '0');
+  return `${m}/${day} ${h}:${min}`;
+}
+
 async function fetchCloudData() {
   showLoading(true);
   try {
     const response = await fetch(API_URL);
     cloudHistory = await response.json();
-    if (cloudHistory && cloudHistory.length > 0) { lastCloudStock = cloudHistory[0].saveStocks; }
+    if (cloudHistory && cloudHistory.length > 0) { lastCloudStock = cloudHistory.saveStocks; }
     renderHistory();
     initTable();
-  } catch (e) { document.getElementById("historyList").innerText = "資料讀取失敗。"; }
+  } catch (e) { document.getElementById("historyList").innerText = "連線失敗。"; }
   showLoading(false);
 }
 
 function initTable() {
   const tbody = document.getElementById("tableBody");
   tbody.innerHTML = "";
-  const lastRecord = (cloudHistory.length > 0) ? cloudHistory[0] : null;
+  const lastRecord = (cloudHistory && cloudHistory.length > 0) ? cloudHistory : null;
 
   products.forEach((p, i) => {
     const yesterdayVal = (lastCloudStock && lastCloudStock[i] !== undefined) ? lastCloudStock[i] : 0;
@@ -128,17 +146,17 @@ function initTable() {
 
     tbody.innerHTML += `
       <tr id="row${i}">
-        <td><input type="checkbox" id="supply${i}" checked onchange="toggleRow(${i})"><br><span style="font-size:0.75em">供應中</span></td>
-        <td style="font-weight:bold">${p.name}<span class="last-order-qty" style="font-size:0.8em;color:#007bff;display:block;">(上次叫: ${lastOrderQty})</span></td>
+        <td><input type="checkbox" id="supply${i}" checked onchange="toggleRow(${i})"></td>
+        <td style="font-weight:bold">${p.name}<span style="font-size:0.8em;color:#007bff;display:block;">(上次叫: ${lastOrderQty})</span></td>
         <td><input type="number" id="y${i}" value="${yesterdayVal}" oninput="calculate(false)"></td>
         <td><input type="number" id="in${i}" value="0" oninput="calculate(false)"></td>
         <td><input type="number" id="sale${i}" value="0" oninput="calculate(false)"></td>
         <td id="theory${i}">0</td>
         <td><input type="number" id="act${i}" class="input-actual" value="0" oninput="calculate(false)"></td>
         <td id="diff${i}">0</td>
-        <td id="safe${i}">0</td>
-        <td id="order${i}">0</td>
-        <td><input type="text" id="note${i}" placeholder="補充"></td>
+        <td id="suggest${i}">0</td>
+        <td><input type="number" id="final${i}" class="input-final" value="0" oninput="updateTotalOnly()"></td>
+        <td><input type="text" id="note${i}" placeholder="備註"></td>
       </tr>
     `;
   });
@@ -154,17 +172,13 @@ function toggleRow(i) {
   calculate(false);
 }
 
-async function calculate(isSaving = false) {
+function calculate(isSaving = false) {
   const user = document.getElementById("userName").value.trim();
-  if(isSaving && !user) { alert("❌ 請先輸入填單人姓名！"); return; }
+  if(isSaving && !user) { alert("❌ 請先輸入姓名！"); return; }
 
-  let total = 0; let summary = []; let saveStocks = []; let currentDetails = [];
+  let finalTotal = 0;
+  let summary = []; let saveStocks = []; let currentDetails = [];
   const info = getTomorrowInfo();
-  let hasActualInput = false;
-
-  // 取得現在時間 (時:分)
-  const now = new Date();
-  const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
 
   products.forEach((p, i) => {
     const isSupplied = document.getElementById(`supply${i}`).checked;
@@ -173,59 +187,61 @@ async function calculate(isSaving = false) {
     const sale = Number(document.getElementById("sale"+i).value);
     const act = Number(document.getElementById("act"+i).value);
 
-    if(act !== 0) hasActualInput = true;
     const theory = y + inc - sale;
     const diff = act - theory;
     const safe = safety(p);
-    const order = isSupplied ? Math.max(0, safe - act) : 0;
+    const suggestOrder = isSupplied ? Math.max(0, safe - act) : 0;
 
     document.getElementById("theory"+i).innerText = theory;
-    document.getElementById("safe"+i).innerText = isSupplied ? safe : "-";
-    const oCell = document.getElementById("order"+i);
-    oCell.innerText = order;
-    oCell.className = (isSupplied && order > 0) ? "order-active" : "";
-
+    document.getElementById("suggest"+i).innerText = suggestOrder;
     const dCell = document.getElementById("diff"+i);
     dCell.innerText = (diff > 0 ? "+" : "") + diff;
     dCell.className = diff < 0 ? "diff-neg" : "";
+    
+    if (document.activeElement.id !== `final${i}`) {
+      document.getElementById("final"+i).value = suggestOrder;
+    }
+    const finalOrder = Number(document.getElementById("final"+i).value);
+    finalTotal += finalOrder;
 
     saveStocks.push(act);
-    currentDetails.push({ name: p.name, qty: order, supplied: isSupplied });
+    currentDetails.push({ name: p.name, qty: finalOrder, supplied: isSupplied });
     const note = document.getElementById("note"+i).value.trim();
     if(!isSupplied) summary.push(`${p.name}:停供`);
     else if(note || diff !== 0) summary.push(`${p.name}${diff !== 0 ? '(差'+diff+')' : ''}:${note}`);
-    total += order;
   });
 
-  const totalEl = document.getElementById("total");
-  totalEl.innerText = `總叫貨量：${total} （✅ 已計算）`;
-  
+  document.getElementById("total").innerText = `最終總叫貨量：${finalTotal}`;
+
   if(isSaving) {
-    if(!hasActualInput && !confirm("⚠️ 實盤全為 0，確定儲存嗎？")) return;
-    const todayExist = cloudHistory.find(item => formatCloudDate(item.date) === info.dateStr);
-    if(todayExist && !confirm(`⚠️ ${info.dateStr} 已有存檔，確定覆蓋？`)) return;
-    if(!confirm(`確認儲存？\n到貨日期：${info.dateStr}\n總叫貨量：${total}`)) return;
-    
-    document.getElementById("saveBtn").disabled = true;
-    showLoading(true);
+    if(!confirm(`確認儲存？\n人員：${user}\n到貨日：${info.dateStr}\n最終量：${finalTotal}`)) return;
+    saveToCloud(finalTotal, user, summary, saveStocks, currentDetails, info.dateStr);
+  }
+}
 
-    const payload = {
-      // 這裡將時間併入日期字串傳送
-      date: info.dateStr + " " + timeStr, 
-      amount: total, status: true,
-      note: `填單人:${user}; ` + summary.join("; "),
-      saveStocks: saveStocks, details: currentDetails
-    };
+function updateTotalOnly() {
+  let finalTotal = 0;
+  products.forEach((p, i) => finalTotal += Number(document.getElementById("final"+i).value));
+  document.getElementById("total").innerText = `最終總叫貨量：${finalTotal}`;
+}
 
-    try {
-      await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-      alert("☁️ 同步成功！");
-      location.reload(); 
-    } catch (e) {
-      alert("連線失敗！");
-      document.getElementById("saveBtn").disabled = false;
-      showLoading(false);
-    }
+async function saveToCloud(amount, user, summary, saveStocks, details, tomorrowDate) {
+  document.getElementById("saveBtn").disabled = true;
+  showLoading(true);
+  const payload = {
+    date: new Date().toString(),
+    amount: amount, status: true,
+    note: `人員:${user}; 到貨日:${tomorrowDate}; ` + summary.join("; "),
+    saveStocks: saveStocks, details: details
+  };
+  try {
+    await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+    alert("☁️ 同步成功！");
+    location.reload(); 
+  } catch (e) {
+    alert("失敗！");
+    document.getElementById("saveBtn").disabled = false;
+    showLoading(false);
   }
 }
 
@@ -233,17 +249,6 @@ function getTomorrowInfo(){
   const t = new Date(); t.setDate(t.getDate() + 1);
   const dayNames = ["日","一","二","三","四","五","六"];
   return { dateStr: (t.getMonth()+1)+"/"+t.getDate(), text: "週"+dayNames[t.getDay()], isHoliday: (t.getDay() === 5 || t.getDay() === 6 || t.getDay() === 0) };
-}
-
-function formatCloudDate(rawDate) {
-  // rawDate 可能包含 "4/20 15:30" 或 ISO 格式
-  if (!rawDate) return "";
-  return rawDate.split(" ")[0].split("T")[0].replace(/^\d{4}-/, "").replace("-", "/");
-}
-
-function formatCloudTime(rawDate) {
-  if (!rawDate || !rawDate.includes(" ")) return "";
-  return rawDate.split(" ")[1].substring(0, 5); // 抓取 時:分
 }
 
 function safety(p){
@@ -263,15 +268,19 @@ function updateTomorrowUI(){
 
 function renderHistory() {
   const list = document.getElementById("historyList");
-  if (!cloudHistory || cloudHistory.length === 0) { list.innerHTML = "<p>無雲端紀錄</p>"; return; }
+  if (!cloudHistory || cloudHistory.length === 0) { list.innerHTML = "<p>無紀錄</p>"; return; }
   list.innerHTML = cloudHistory.map(item => `
     <div class="history-card">
-      <div class="history-header">
-        <div><b>${item.date}</b> <span class="badge">✅ 已記錄</span></div>
-        <div style="color:#007bff; font-weight:bold;">總量: ${item.amount}</div>
+      <div style="display:flex; justify-content:space-between;">
+        <div style="font-weight:bold; color:#555;">📝 叫貨時間：${toTaiwanTime(item.date)}</div>
+        <div style="color:#28a745; font-weight:bold;">最終總量: ${item.amount}</div>
       </div>
-      <div class="detail-grid">${item.details.map(d => `<div class="detail-item" style="${d.supplied===false?'text-decoration:line-through;color:#aaa;':''}">${d.name}: <b>${d.qty}</b></div>`).join('')}</div>
-      <div style="font-size:0.85em; color:#666; margin-top:5px; border-top:1px dashed #eee; padding-top:5px;">📝 ${item.note}</div>
+      <div class="detail-grid" style="margin-top:10px;">
+        ${item.details.map(d => `<div class="detail-item">${d.name}: <b>${d.qty}</b></div>`).join('')}
+      </div>
+      <div style="font-size:0.85em; color:#666; margin-top:8px; padding-top:5px; border-top:1px dashed #eee;">
+        💡 ${item.note}
+      </div>
     </div>
   `).join("");
 }
@@ -279,16 +288,13 @@ function renderHistory() {
 function exportToCSV() {
   if (cloudHistory.length === 0) return alert("無資料");
   const pNames = products.map(p => p.name);
-  // CSV 標題增加時間欄位
-  let csv = "\uFEFF日期,時間,總量,狀態," + pNames.join(",") + ",備註\n";
+  let csv = "\uFEFF叫貨時間,最終總量,備註," + pNames.join(",") + "\n";
   cloudHistory.forEach(item => {
-    const datePart = formatCloudDate(item.date);
-    const timePart = formatCloudTime(item.date);
     const rowDetails = pNames.map(name => {
       const found = item.details.find(d => d.name === name);
       return found ? found.qty : 0;
     });
-    csv += `${datePart},${timePart},${item.amount},已記錄,${rowDetails.join(",")},${item.note}\n`;
+    csv += `${toTaiwanTime(item.date)},${item.amount},"${item.note}",${rowDetails.join(",")}\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement("a");
