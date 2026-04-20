@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>門市叫貨系統 - 輸入優化版</title>
+<title>門市叫貨系統 - 最終管理優化版</title>
 <style>
   body { font-family: "Microsoft JhengHei", Arial, sans-serif; padding: 15px; max-width: 1300px; margin: auto; line-height: 1.6; background-color: #f4f7f6; }
   .help-box { background: #fff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px; font-size: 0.95em; color: #444; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -45,7 +45,7 @@
   3. <b>理論庫存</b>：自動計算「昨 + 到 - 銷 - 廢」。<br>
   4. <b>庫存接軌</b>：儲存成功後，今日<b>現場實盤</b>會自動變為明日的<b>昨日庫存</b>並鎖定。<br>
   5. <b>備註與預訂</b>：備註可輸入「請到貨6入裝厚切火腿共三盒」或「厚切+金沙各三入共2盒」，須手動計算數量並加入最終叫貨量。<br>
-  6. <b>最終叫貨量</b>：黃色格可調整叫貨量，若不需補貨請手動改為 <b>0</b>。
+  6. <b>最終叫貨量</b>：黃色格可調整叫貨量，若有預訂請手動累加總顆數。不需補貨請手動改為 <b>0</b>。
 </div>
 
 <div class="user-box">
@@ -109,7 +109,6 @@
 </div>
 
 <script>
-// --- 請貼回您的 Google API 網址 ---
 const API_URL = "https://script.google.com/macros/s/AKfycby-ZvkQ60TqtgXP_EmEiVmgkMO5t7qaXS6PGenEV1t0-P88cqZ88R_PT0Q8Qu2bh9J5/exec"; 
 
 const products = [
@@ -174,16 +173,8 @@ function initTable() {
   calculate(true);
 }
 
-// 💡 新增：點擊時清空 0 的功能
-function clearZero(el) {
-  if (el.value === "0") el.value = "";
-}
-
-// 💡 新增：離開時若空白則補回 0
-function restoreZero(el) {
-  if (el.value === "") el.value = "0";
-}
-
+function clearZero(el) { if (el.value === "0") el.value = ""; }
+function restoreZero(el) { if (el.value === "") el.value = "0"; }
 function handleInput(i) { calculate(false); }
 function handleManualFinal(i) { manualOverride[i] = true; updateTotalOnly(); }
 
@@ -197,24 +188,18 @@ function calculate(forceAll = false) {
     const sale = Number(document.getElementById("sale"+i).value);
     const waste = Number(document.getElementById("waste"+i).value);
     const act = Number(document.getElementById("act"+i).value);
-
     const theory = y + inc - sale - waste;
     const diff = act - theory;
     const safe = safety(p);
     const suggestOrder = isSupplied ? Math.max(0, safe - act) : 0;
-
     const theoryCell = document.getElementById("theory"+i);
     theoryCell.innerText = theory;
     theory < 0 ? theoryCell.classList.add("theory-neg") : theoryCell.classList.remove("theory-neg");
-    
     document.getElementById("suggest"+i).innerText = suggestOrder;
     const dCell = document.getElementById("diff"+i);
     dCell.innerText = (diff > 0 ? "+" : "") + diff;
     dCell.className = diff < 0 ? "diff-neg" : "";
-    
-    if (forceAll || !manualOverride[i] || !isSupplied) {
-      document.getElementById("final"+i).value = suggestOrder;
-    }
+    if (forceAll || !manualOverride[i] || !isSupplied) { document.getElementById("final"+i).value = suggestOrder; }
     finalTotal += Number(document.getElementById("final"+i).value);
   });
   document.getElementById("total").innerText = `最終總叫貨量：${finalTotal}`;
@@ -222,12 +207,10 @@ function calculate(forceAll = false) {
 
 async function prepareSave() {
   const user = document.getElementById("userName").value.trim();
-  if(!user) { alert("❌ 請先輸入姓名！"); return; }
-  
+  if(!user) { alert("❌ 請先輸入填單人姓名！"); return; }
   let finalTotal = 0; let summary = []; let currentSaveStocks = []; let currentDetails = [];
   const info = getTomorrowInfo();
   let validationError = false;
-
   products.forEach((p, i) => {
     if (p.active) {
       const act = Number(document.getElementById("act"+i).value);
@@ -237,12 +220,7 @@ async function prepareSave() {
       const noteInput = document.getElementById("note"+i);
       const noteStr = noteInput.value.trim();
       const isSupplied = document.getElementById(`supply${i}`).checked;
-
-      if (isSupplied && diffVal < 0 && noteStr === "") {
-        noteInput.classList.add("required-error");
-        validationError = true;
-      }
-
+      if (isSupplied && diffVal < 0 && noteStr === "") { noteInput.classList.add("required-error"); validationError = true; }
       finalTotal += finalVal;
       currentSaveStocks.push(act);
       currentDetails.push({ name: p.name, qty: finalVal, waste: waste, diff: diffVal, supplied: isSupplied });
@@ -253,7 +231,6 @@ async function prepareSave() {
       currentDetails.push({ name: p.name, qty: 0, waste: 0, diff: 0, supplied: false });
     }
   });
-
   if (validationError) { alert("⚠️ 有品項出現損耗(差異小於0)，請填寫備註原因！"); return; }
   if(!confirm(`確認儲存？\n人員：${user}\n實盤數值將對接為明日庫存。`)) return;
   saveToCloud(finalTotal, user, summary.join("; "), currentSaveStocks, currentDetails, info.dateStr);
