@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>門市叫貨系統 - 最終管理版</title>
+<title>門市叫貨系統 - 輸入優化版</title>
 <style>
   body { font-family: "Microsoft JhengHei", Arial, sans-serif; padding: 15px; max-width: 1300px; margin: auto; line-height: 1.6; background-color: #f4f7f6; }
   .help-box { background: #fff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px; font-size: 0.95em; color: #444; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -11,7 +11,7 @@
   .user-box { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
   .table-container { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; min-width: 1150px; }
-  th, td { border: 1px solid #eee; padding: 8px; text-align: center; }
+  th, td { border: 1px solid #eee; padding: 10px; text-align: center; }
   th { background-color: #f8f9fa; font-size: 0.9em; vertical-align: middle; }
   input[type="number"] { width: 50px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
   input[type="text"] { width: 95%; padding: 5px; border: 1px solid #eee; border-radius: 4px; }
@@ -45,7 +45,7 @@
   3. <b>理論庫存</b>：自動計算「昨 + 到 - 銷 - 廢」。<br>
   4. <b>庫存接軌</b>：儲存成功後，今日<b>現場實盤</b>會自動變為明日的<b>昨日庫存</b>並鎖定。<br>
   5. <b>備註與預訂</b>：備註可輸入「請到貨6入裝厚切火腿共三盒」或「厚切+金沙各三入共2盒」，須手動計算數量並加入最終叫貨量。<br>
-  6. <b>最終叫貨量</b>：黃色格可調整叫貨量，若有預訂請手動累加總顆數。不需補貨請手動改為 <b>0</b>。
+  6. <b>最終叫貨量</b>：黃色格可調整叫貨量，若不需補貨請手動改為 <b>0</b>。
 </div>
 
 <div class="user-box">
@@ -109,7 +109,7 @@
 </div>
 
 <script>
-// --- 請記得貼回您的 Google API 網址 ---
+// --- 請貼回您的 Google API 網址 ---
 const API_URL = "https://script.google.com/macros/s/AKfycby-ZvkQ60TqtgXP_EmEiVmgkMO5t7qaXS6PGenEV1t0-P88cqZ88R_PT0Q8Qu2bh9J5/exec"; 
 
 const products = [
@@ -137,9 +137,7 @@ async function fetchCloudData() {
     const response = await fetch(API_URL);
     cloudHistory = await response.json();
     if (cloudHistory && cloudHistory.length > 0) {
-      // 抓取最後一筆(最新)的紀錄
-      const latestRecord = cloudHistory[0]; 
-      lastCloudStock = latestRecord.saveStocks || [];
+      lastCloudStock = cloudHistory.saveStocks || [];
     }
     calculateStats(); renderHistory(); initTable();
   } catch (e) { document.getElementById("historyList").innerText = "連線失敗。"; }
@@ -159,15 +157,15 @@ function initTable() {
       <tr id="row${i}">
         <td><input type="checkbox" id="supply${i}" checked onchange="toggleRow(${i})"><br><span style="font-size:0.7em; color:#666;">上架</span></td>
         <td style="font-weight:bold">${p.name}</td>
-        <td><input type="number" id="y${i}" value="${yesterdayVal}" oninput="handleInput(${i})" ${isLocked ? 'readonly' : ''}></td>
-        <td><input type="number" id="in${i}" value="0" oninput="handleInput(${i})"></td>
-        <td><input type="number" id="sale${i}" value="0" oninput="handleInput(${i})"></td>
-        <td><input type="number" id="waste${i}" class="input-waste" value="0" oninput="handleInput(${i})"></td>
+        <td><input type="number" id="y${i}" value="${yesterdayVal}" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="handleInput(${i})" ${isLocked ? 'readonly' : ''}></td>
+        <td><input type="number" id="in${i}" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="handleInput(${i})"></td>
+        <td><input type="number" id="sale${i}" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="handleInput(${i})"></td>
+        <td><input type="number" id="waste${i}" class="input-waste" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="handleInput(${i})"></td>
         <td id="theory${i}">0</td>
-        <td><input type="number" id="act${i}" class="input-actual" value="0" oninput="handleInput(${i})"></td>
+        <td><input type="number" id="act${i}" class="input-actual" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="handleInput(${i})"></td>
         <td id="diff${i}">0</td>
         <td id="suggest${i}">0</td>
-        <td><input type="number" id="final${i}" class="input-final" value="0" oninput="handleManualFinal(${i})"></td>
+        <td><input type="number" id="final${i}" class="input-final" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="handleManualFinal(${i})"></td>
         <td><input type="text" id="note${i}" placeholder="例如：試吃*1" oninput="this.classList.remove('required-error')"></td>
       </tr>
     `;
@@ -176,7 +174,17 @@ function initTable() {
   calculate(true);
 }
 
-function handleInput(i) { calculate(false, i); }
+// 💡 新增：點擊時清空 0 的功能
+function clearZero(el) {
+  if (el.value === "0") el.value = "";
+}
+
+// 💡 新增：離開時若空白則補回 0
+function restoreZero(el) {
+  if (el.value === "") el.value = "0";
+}
+
+function handleInput(i) { calculate(false); }
 function handleManualFinal(i) { manualOverride[i] = true; updateTotalOnly(); }
 
 function calculate(forceAll = false) {
