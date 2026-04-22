@@ -7,14 +7,13 @@
 <style>
   body { font-family: "Microsoft JhengHei", Arial, sans-serif; padding: 15px; max-width: 1550px; margin: auto; line-height: 1.6; background-color: #f4f7f6; }
   .help-box { background: #fff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px; font-size: 0.92em; color: #444; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-  /* 藍色粗體樣式 */
   .help-box b { color: #007bff; font-weight: bold; }
-  .user-box { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
+  .user-box { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
   .table-container { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; min-width: 1500px; }
   th, td { border: 1px solid #eee; padding: 10px; text-align: center; }
   th { background-color: #f8f9fa; font-size: 0.9em; vertical-align: middle; }
-  input[type="number"] { width: 45px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+  input[type="number"] { width: 50px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
   input[type="text"] { width: 92%; padding: 5px; border: 1px solid #eee; border-radius: 4px; }
   input[readonly] { background-color: #f0f0f0 !important; color: #777 !important; cursor: not-allowed; }
   .input-actual { background-color: #e3f2fd; border: 1px solid #2196f3 !important; font-weight: bold; color: #0d47a1; }
@@ -26,6 +25,7 @@
   .sub-text { font-size: 0.75em; color: #888; display: block; font-weight: normal; margin-top: 2px; line-height: 1.2; }
   .stats-card { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 280px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid #007bff; }
   .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9em; margin-top: 10px; }
+  .stats-item { background: #f8f9fa; padding: 4px 8px; border-radius: 4px; display: flex; justify-content: space-between; }
   .history-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 12px; border-left: 5px solid #28a745; }
   .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; font-size: 0.85em; }
   .detail-item { background: #f1f3f5; padding: 10px; border-radius: 6px; border: 1px solid #dee2e6; line-height: 1.5; }
@@ -42,19 +42,26 @@
   <div style="padding: 10px;">
     <strong>💡 使用說明：</strong><br>
     1. <b>自動判斷</b>：依明日日期設定目標基準（五六日為假日模式）。<br>
-    2. <b>強制模式</b>：若遇到補班日、特殊連假，請手動點選下方按鈕切換平假日標準。<br>
+    2. <b>強制模式</b>：若遇到補班日、特殊連假，請手動按鈕切換平假日標準。<br>
     3. <b>理論庫存</b>：自動計算「昨 + 到 - 銷 - 廢」。<br>
     4. <b>庫存接軌</b>：儲存成功後，今日現場實盤會自動變為明日的昨日庫存並鎖定。<br>
     5. <b>備註與預訂</b>：備註可輸入「請到貨6入裝厚切火腿共三盒」或「厚切+金沙各三入共2盒」，須手動計算數量並加入最終叫貨量。<br>
     6. <b>最終叫貨量</b>：黃色格可調整叫貨量，若有預訂請手動累加總顆數。不需補貨請手動改為 0。<br>
     7. <b>到期日校驗</b>：到期日A + 到期日B 的數量，需等於現場實盤。<br>
-    <div style="text-align:right; font-size:0.8em; color:#999; margin-top: 10px;">版本：04211900 更新日期：2024/04/21</div>
+    8. <b>異常原因強制填寫</b>：若現場實盤與理論庫存有落差（不論多或少），請務必填寫備註原因。<br>
+    <div style="text-align:right; font-size:0.8em; color:#999; margin-top: 10px;">版本：04221450 更新日期：2024/04/22</div>
   </div>
 </div>
 
 <div class="user-box">
-  <label style="font-weight:bold;">👤 填單人姓名：</label>
-  <input type="text" id="userName" placeholder="請輸入姓名" style="padding: 8px; width: 200px; border: 1px solid #007bff; border-radius: 4px;">
+  <div>
+    <label style="font-weight:bold;">👤 填單人姓名：</label>
+    <input type="text" id="userName" placeholder="請輸入姓名" style="padding: 8px; width: 150px; border: 1px solid #007bff; border-radius: 4px;">
+  </div>
+  <div>
+    <label style="font-weight:bold;">💰 收銀機結帳金額：</label>
+    <input type="number" id="cashAmount" placeholder="0" style="padding: 8px; width: 120px; border: 1px solid #28a745; border-radius: 4px;">
+  </div>
 </div>
 
 <div id="tomorrowInfo" style="margin: 15px 0; font-weight: bold; font-size: 1.1em;">🚚 預計到貨日期：載入中...</div>
@@ -71,19 +78,19 @@
       <tr>
         <th style="width: 50px;">上架</th>
         <th>品項</th>
-        <th>昨日庫存</th>
+        <th>昨日庫存<span class="sub-text">自動對接昨日實盤</span></th>
         <th>今日到貨<span class="sub-text">需對點進貨單</span></th>
-        <th>今日銷售<span class="sub-text">不含報廢和試吃數量</span></th>
-        <th>今日報廢</th>
-        <th>今日試吃</th>
+        <th>今日銷售<span class="sub-text">不含廢/試</span></th>
+        <th>今日報廢<span class="sub-text">損耗數量</span></th>
+        <th>今日試吃<span class="sub-text">公關/試點</span></th>
         <th>理論庫存<span class="sub-text">(昨+到-銷-廢-試)</span></th>
         <th>現場實盤<span class="sub-text">(藍色)</span></th>
-        <th>差異數</th>
-        <th>建議叫貨</th>
-        <th>最終叫貨量<span class="sub-text">(可手動調整)</span></th>
-        <th style="width: 120px;">備註<span class="sub-text" style="color:#d32f2f;">差異小於 0 必填</span></th>
-        <th style="width: 140px;">到期日A<span class="sub-text">(到期日*顆數)</span></th>
-        <th style="width: 140px;">到期日B<span class="sub-text">(到期日*顆數)</span></th>
+        <th>差異數<span class="sub-text">實盤-理論</span></th>
+        <th>建議叫貨<span class="sub-text">標準-實盤</span></th>
+        <th>最終叫貨量<span class="sub-text">(黃色可調整)</span></th>
+        <th style="width: 130px;">備註<span class="sub-text" style="color:#d32f2f;">差異不等於 0 必填</span></th>
+        <th style="width: 140px;">到期日A<span class="sub-text">(日期*顆數)</span></th>
+        <th style="width: 140px;">到期日B<span class="sub-text">(日期*顆數)</span></th>
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
@@ -99,15 +106,11 @@
 </div>
 
 <div class="history-section">
-  <div style="display:flex; justify-content: space-between; align-items: center;">
-    <h3>📜 雲端叫貨歷史 (最近20筆)</h3>
-    <button onclick="exportToCSV()" style="background:#607d8b; color:white; border:none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">📥 匯出 CSV</button>
-  </div>
+  <h3>📜 雲端叫貨歷史 (最近20筆)</h3>
   <div id="historyList"></div>
 </div>
 
 <script>
-// --- 💡 請務必換回您的 Google API 網址 ---
 const API_URL = "https://script.google.com/macros/s/AKfycby-ZvkQ60TqtgXP_EmEiVmgkMO5t7qaXS6PGenEV1t0-P88cqZ88R_PT0Q8Qu2bh9J5/exec"; 
 
 const products = [
@@ -144,7 +147,7 @@ function initTable() {
     if (!p.active) return;
     const yVal = (lastCloudStock[i] !== undefined) ? lastCloudStock[i] : 0;
     tbody.innerHTML += `
-      <tr id="row${i}">
+      <tr>
         <td><input type="checkbox" id="supply${i}" checked onchange="calculate()"></td>
         <td style="font-weight:bold">${p.name}</td>
         <td><input type="number" id="y${i}" value="${yVal}" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()" ${isLocked ? 'readonly' : ''}></td>
@@ -157,7 +160,7 @@ function initTable() {
         <td id="diff${i}">0</td>
         <td id="suggest${i}">0</td>
         <td><input type="number" id="final${i}" class="input-final" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="handleManualFinal(${i})"></td>
-        <td><input type="text" id="note${i}"></td>
+        <td><input type="text" id="note${i}" oninput="this.classList.remove('required-error')"></td>
         <td><input type="text" id="batch1_${i}" placeholder="例如:5/1*20"></td>
         <td><input type="text" id="batch2_${i}" placeholder="例如:5/1*20"></td>
       </tr>`;
@@ -190,9 +193,10 @@ function calculate(forceAll = false) {
     const suggest = isS ? Math.max(0, safety(p) - act) : 0;
     document.getElementById("theory"+i).innerText = theory;
     document.getElementById("theory"+i).classList.toggle("theory-neg", theory < 0);
-    document.getElementById("suggest"+i).innerText = suggest;
     const dCell = document.getElementById("diff"+i);
-    dCell.innerText = (diff > 0 ? "+" : "") + diff; dCell.className = diff < 0 ? "diff-neg" : "";
+    dCell.innerText = (diff > 0 ? "+" : "") + diff;
+    dCell.className = diff !== 0 ? "diff-neg" : "";
+    document.getElementById("suggest"+i).innerText = suggest;
     if (forceAll || !manualOverride[i] || !isS) document.getElementById("final"+i).value = suggest;
     finalTotal += Number(document.getElementById("final"+i).value);
   });
@@ -201,47 +205,57 @@ function calculate(forceAll = false) {
 
 async function prepareSave() {
   const user = document.getElementById("userName").value.trim();
+  const cash = document.getElementById("cashAmount").value;
   if(!user) return alert("❌ 請先輸入填單人姓名！");
-  let finalTotal = 0, summary = [], currentSaveStocks = [], currentDetails = [], validationError = false, batchError = false, errorMsg = "";
+  
+  let finalTotal = 0, currentSaveStocks = [], currentDetails = [], validationError = false, batchError = false, errorMsg = "";
   const info = getTomorrowInfo();
   
   products.forEach((p, i) => {
-    const yVal = Number(document.getElementById("y"+i)?.value || lastCloudStock[i] || 0);
+    const yVal = Number(document.getElementById("y"+i)?.value || 0);
     if (!p.active) { currentSaveStocks.push(yVal); return; }
     const act = Number(document.getElementById("act"+i).value);
     const diff = Number(document.getElementById("diff"+i).innerText);
     const noteI = document.getElementById("note"+i);
     const b1 = document.getElementById("batch1_"+i).value.trim(), b2 = document.getElementById("batch2_"+i).value.trim();
     const isS = document.getElementById(`supply${i}`).checked;
-    if (isS && diff < 0 && noteI.value.trim() === "") { noteI.classList.add("required-error"); validationError = true; }
+
+    if (isS && diff !== 0 && noteI.value.trim() === "") { noteI.classList.add("required-error"); validationError = true; }
+
     const b1Qty = extractAndSumNumbers(b1), b2Qty = extractAndSumNumbers(b2);
-    if (act > 0 && (b1Qty + b2Qty) !== act) { batchError = true; errorMsg += `${p.name}: 到期日數量總和 ≠ 實盤\n`; }
+    const batchTotal = b1Qty + b2Qty;
+
+    // 💡 修正點：彈出視窗包含具體數字
+    if (act > 0 && batchTotal !== act) { 
+        batchError = true; 
+        errorMsg += `${p.name}: 到期日總數(${batchTotal}) ≠ 實盤數(${act})\n`; 
+    }
+
     const final = Number(document.getElementById("final"+i).value);
     finalTotal += final; currentSaveStocks.push(act);
     currentDetails.push({ 
-      name: p.name, y: yVal, inc: Number(document.getElementById("in"+i).value), qty: final, act: act, 
-      sale: Number(document.getElementById("sale"+i).value), 
-      waste: Number(document.getElementById("waste"+i).value), 
-      tast: Number(document.getElementById("tast"+i).value), 
-      diff: diff, b1: b1, b2: b2, note: noteI.value 
+        name: p.name, y: yVal, inc: Number(document.getElementById("in"+i).value), sale: Number(document.getElementById("sale"+i).value),
+        qty: final, act: act, waste: Number(document.getElementById("waste"+i).value), tast: Number(document.getElementById("tast"+i).value), 
+        diff: diff, b1: b1, b2: b2, note: noteI.value 
     });
-    summary.push(`${p.name}(差:${diff}):${noteI.value} [${b1}${b2 ? ' / '+b2 : ''}]`);
   });
-  if (validationError) return alert("⚠️ 差異小於 0 請填寫原因！");
-  if (batchError) return alert("⚠️ 到期日數量不符，請修正後儲存！\n\n" + errorMsg);
-  if (!confirm("確認儲存？今日實盤將對接為明日庫存。")) return;
+
+  if (validationError) return alert("⚠️ 實盤與理論不符，請填寫備註原因！");
+  if (batchError) return alert("⚠️ 到期日數量校驗失敗！\n\n" + errorMsg);
+  if (!confirm("確認儲存？今日結帳金額為 $" + (cash || 0))) return;
+
   showLoading(true);
-  const payload = { date: new Date().toString(), amount: finalTotal, status: true, note: `人員:${user}; 到貨日:${info.dateStr}; ${summary.join("; ")}`, saveStocks: currentSaveStocks, details: currentDetails };
+  const payload = { date: new Date().toString(), amount: finalTotal, cashTotal: cash || 0, status: true, note: `人員:${user}; 結帳:${cash}`, saveStocks: currentSaveStocks, details: currentDetails };
   try {
     await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-    alert("☁️ 同步成功！"); setTimeout(() => location.reload(), 1200);
+    alert("☁️ 同步成功！"); location.reload();
   } catch (e) { alert("失敗！"); showLoading(false); }
 }
 
 function getTomorrowInfo(){
   const t = new Date(); t.setDate(t.getDate() + 1);
   const dayNames = ["週日","週一","週二","週三","週四","週五","週六"];
-  const hDays = [5,6,0]; // 週五、六、日
+  const hDays = [0, 5, 6]; 
   return { dateStr: (t.getMonth()+1)+"/"+t.getDate()+" ("+dayNames[t.getDay()]+")", isHoliday: hDays.includes(t.getDay()) };
 }
 function safety(p){ const info = getTomorrowInfo(); return forceMode ? p[forceMode] : (info.isHoliday ? p.holiday : p.weekday); }
@@ -253,9 +267,11 @@ function calculateStats() {
   products.forEach(p => { wSums[p.name] = 0; mSums[p.name] = 0; });
   cloudHistory.forEach(record => {
     const d = new Date(record.date);
-    const isW = d >= oneWeekAgo, isM = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     if (record.details) record.details.forEach(item => {
-      if (wSums.hasOwnProperty(item.name)) { if (isW) { wSums[item.name]+=item.qty; wT+=item.qty; } if (isM) { mSums[item.name]+=item.qty; mT+=item.qty; } }
+      if (wSums.hasOwnProperty(item.name)) {
+        if (d >= oneWeekAgo) { wSums[item.name]+=item.qty; wT+=item.qty; }
+        if (d.getMonth() === now.getMonth()) { mSums[item.name]+=item.qty; mT+=item.qty; }
+      }
     });
   });
   document.getElementById("statsPanel").innerHTML = `<div class="stats-card"><h4>📅 本週累計 <span style="color:#007bff">${wT}</span></h4><div class="stats-grid">${products.filter(p=>p.active).map(p=>`<div class="stats-item"><span>${p.name}</span><b>${wSums[p.name]}</b></div>`).join('')}</div></div><div class="stats-card" style="border-top-color:#28a745;"><h4>🗓️ 本月累計 <span style="color:#28a745">${mT}</span></h4><div class="stats-grid">${products.filter(p=>p.active).map(p=>`<div class="stats-item"><span>${p.name}</span><b>${mSums[p.name]}</b></div>`).join('')}</div></div>`;
@@ -265,14 +281,13 @@ function renderHistory() {
   const list = document.getElementById("historyList");
   list.innerHTML = cloudHistory.slice(0, 20).map(item => `
     <div class="history-card">
-      <div style="display:flex; justify-content:space-between;"><b>📝 ${toTaiwanTime(item.date)}</b> <b>總量: ${item.amount}</b></div>
+      <div style="display:flex; justify-content:space-between;"><b>📝 ${toTaiwanTime(item.date)}</b> <b>結帳: $${item.cashTotal || 0}</b></div>
       <div class="detail-grid" style="margin-top:10px;">
         ${(item.details||[]).map(d => `
           <div class="detail-item">
-            ${d.name}: <b>${d.qty}</b> <small style="color:blue">實盤:${d.act||0}</small><br>
+            ${d.name}: <b>${d.qty}</b> <small style="color:blue">實:${d.act||0}</small><br>
             <small style="color:red">廢:${d.waste||0}/試:${d.tast||0}</small><br>
-            ${d.b1 ? '<small>到期日:'+d.b1+'</small>' : ''}
-            ${d.b2 ? '<br><small>到期日:'+d.b2+'</small>' : ''}
+            ${d.b1 ? '<small>到期:'+d.b1+'</small>' : ''}${d.b2 ? '<br><small>到期:'+d.b2+'</small>' : ''}
           </div>
         `).join('')}
       </div>
@@ -280,27 +295,9 @@ function renderHistory() {
     </div>`).join("");
 }
 
-function exportToCSV() {
-  if (!cloudHistory.length) return alert("無資料");
-  const pNames = products.filter(p=>p.active).map(p => p.name);
-  let csv = "\uFEFF叫貨時間,總叫貨量,完整備註," + pNames.map(n => `${n}叫貨,${n}實盤,${n}報廢,${n}試吃,${n}差異,${n}到期日A,${n}到期日B`).join(",") + "\n";
-  cloudHistory.forEach(item => {
-    let row = [toTaiwanTime(item.date), item.amount, `"${(item.note||"").replace(/"/g,'""')}"`];
-    pNames.forEach(name => {
-      const d = (item.details || []).find(det => det.name === name) || {qty:0, act:0, waste:0, tast:0, diff:0, b1:"", b2:""};
-      row.push(d.qty, d.act, d.waste, d.tast, d.diff, `"${d.b1||''}"`, `"${d.b2||''}"`);
-    });
-    csv += row.join(",") + "\n";
-  });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "門市叫貨紀錄.csv"; link.click();
-}
-
 function toTaiwanTime(raw) { const d = new Date(raw); return (d.getMonth()+1)+"/"+d.getDate()+" "+d.getHours()+":"+d.getMinutes().toString().padStart(2,'0'); }
 function setMode(mode){ forceMode = mode; updateTomorrowUI(); calculate(true); }
-function handleManualFinal(i) { manualOverride[i] = true; let total = 0; products.forEach((p, idx) => { if(p.active) total += Number(document.getElementById("final"+idx).value) }); document.getElementById("total").innerText = `最終總叫貨量：${total}`; }
+function handleManualFinal(i) { manualOverride[i] = true; calculate(); }
 function showLoading(show) { document.getElementById("loading").style.display = show ? "flex" : "none"; }
 window.onload = fetchCloudData;
 </script>
