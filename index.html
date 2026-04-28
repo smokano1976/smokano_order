@@ -197,7 +197,7 @@
     padding: 0 6px;
     border: 0.5px solid #ddd; border-radius: 8px;
     font-size: 12px; font-family: inherit;
-    background: #fff; color: #1a1a1a;
+    background: #fff; color: #E24B4A;
     outline: none; transition: border-color 0.15s;
   }
   .txt-batch:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
@@ -282,12 +282,13 @@
   1. <b>自動判斷</b>：依明日日期設定目標基準（五六日為假日模式）。<br>
   2. <b>強制模式</b>：若遇到補班日、特殊連假，請手動按鈕切換平假日標準。<br>
   3. <b>理論庫存</b>：自動計算「昨 + 到 - 銷 - 廢 - 試」。<br>
-  4. <b>備註與預訂</b>：備註可輸入「請到貨6入裝厚切火腿共三盒」或「厚切+金沙各三入共2盒」，須手動計算數量並加入最終叫貨量。<br>
-  5. <b>最終叫貨量</b>：黃色格可調整叫貨量，若有預訂請手動累加總顆數，不需補貨請手動改為 0。<br>
-  6. <b>到期日校驗</b>：到期日A + 到期日B 的數量需等於現場實盤（格式：日期*數量）。<br>
-  7. <b>異常原因強制填寫</b>：庫存有落差時，請務必填寫備註原因。<br>
-  8. <b>庫存接軌</b>：儲存成功後，今日現場實盤會自動變為明日的昨日庫存並鎖定。
-  <div class="help-version">版本：04281730　更新日期：2025/04/28</div>
+  4. <b>叫貨勾選</b>：取消勾選代表今日不叫貨，系統自動將最終叫貨量歸 0，但仍需正常填寫庫存資料。<br>
+  5. <b>備註與預訂</b>：備註可輸入「請到貨6入裝厚切火腿共三盒」或「厚切+金沙各三入共2盒」，須手動計算數量並加入最終叫貨量。<br>
+  6. <b>最終叫貨量</b>：黃色格可調整叫貨量，若有預訂請手動累加總顆數，不需補貨請手動改為 0。<br>
+  7. <b>到期日校驗</b>：到期日A + 到期日B 的數量需等於現場實盤（格式：日期*數量）。<br>
+  8. <b>異常原因強制填寫</b>：庫存有落差時，請務必填寫備註原因。<br>
+  9. <b>庫存接軌</b>：儲存成功後，今日現場實盤會自動變為明日的昨日庫存並鎖定。
+  <div class="help-version">版本：04282000　更新日期：2025/04/28</div>
 </div>
 
 <!-- 使用者資訊 -->
@@ -323,7 +324,7 @@
   <table>
     <thead>
       <tr>
-        <th style="width:44px;">上架</th>
+        <th style="width:44px;">叫貨<span class="sub">取消=不叫</span></th>
         <th class="col-name">品項</th>
         <th>昨日庫存<span class="sub">自動對接</span></th>
         <th>今日到貨<span class="sub">對點進貨單</span></th>
@@ -530,7 +531,7 @@ async function prepareSave() {
     const b2 = document.getElementById("batch2_"+i).value.trim();
     const isS = document.getElementById(`supply${i}`).checked;
 
-    if (isS && diffN !== 0 && noteEl.value.trim() === "") {
+    if (diffN !== 0 && noteEl.value.trim() === "") {
       noteEl.classList.add("required-error");
       validationError = true;
     }
@@ -564,7 +565,15 @@ async function prepareSave() {
 
   const deliveryInfo = getTomorrowInfo();
   const deliveryLabel = deliveryDays === 1 ? "明天" : deliveryDays === 2 ? "後天" : `${deliveryDays}天後`;
-  const confirmMsg = `📋 請確認以下資訊後再儲存：\n\n🚚 到貨日期：${deliveryInfo.dateStr}（${deliveryLabel}）\n💰 結帳金額：$${cash}\n📦 總叫貨量：${finalTotal} 個\n\n⚠️ 如到貨日期選錯，請按「取消」退回修改。`;
+
+  // 整理各品項叫貨量
+  const itemLines = details.map(d => {
+    const suggest = Math.max(0, safety(products.find(p => p.name === d.name)) - d.act);
+    const flag = d.qty !== suggest ? " ✏️" : "";
+    return `  ${d.name}：${d.qty} 個${flag}`;
+  }).join("\n");
+
+  const confirmMsg = `📋 請確認以下資訊後再儲存：\n\n🚚 到貨日期：${deliveryInfo.dateStr}（${deliveryLabel}）\n💰 結帳金額：$${cash}\n📦 總叫貨量：${finalTotal} 個\n\n── 各品項叫貨量 ──\n✏️ 標記表示已手動調整過\n${itemLines}\n\n⚠️ 如需修改請按「取消」退回。`;
   if (!confirm(confirmMsg)) return;
 
   showLoading(true);
