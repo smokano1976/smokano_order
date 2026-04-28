@@ -5,137 +5,388 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>門市叫貨系統</title>
 <style>
-  body { font-family: "Microsoft JhengHei", Arial, sans-serif; padding: 15px; max-width: 1550px; margin: auto; line-height: 1.6; background-color: #f4f7f6; }
-  .help-box { background: #fff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px; font-size: 0.92em; color: #444; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-  .help-box b { color: #007bff; font-weight: bold; }
-  .user-box { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
-  .table-container { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; min-width: 1500px; }
-  th, td { border: 1px solid #eee; padding: 10px; text-align: center; }
-  th { background-color: #f8f9fa; font-size: 0.9em; vertical-align: middle; }
-  input[type="number"] { width: 50px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
-  input[type="text"] { width: 92%; padding: 5px; border: 1px solid #eee; border-radius: 4px; }
-  input[readonly] { background-color: #f0f0f0 !important; color: #777 !important; cursor: not-allowed; }
-  .input-actual { background-color: #e3f2fd; border: 1px solid #2196f3 !important; font-weight: bold; color: #0d47a1; }
-  .input-final { background-color: #fff9c4; border: 1px solid #fbc02d !important; font-weight: bold; color: #d32f2f; }
-  .theory-neg { background-color: #f44336; color: white; border-radius: 4px; }
-  .diff-neg { color: #d32f2f; font-weight: bold; }
-  .required-error { border: 2px solid #f44336 !important; background-color: #fff8f8; }
-  .btn-save { background-color: #28a745; color: white; border: none; font-weight: bold; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 1.1em; }
-  .sub-text { font-size: 0.75em; color: #888; display: block; font-weight: normal; margin-top: 2px; line-height: 1.2; }
-  .stats-card { background: #fff; padding: 15px; border-radius: 8px; flex: 1; min-width: 280px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid #007bff; }
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9em; margin-top: 10px; }
-  .stats-item { background: #f8f9fa; padding: 4px 8px; border-radius: 4px; display: flex; justify-content: space-between; }
-  .history-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 12px; border-left: 5px solid #28a745; }
-  .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; font-size: 0.85em; }
-  .detail-item { background: #f1f3f5; padding: 10px; border-radius: 6px; border: 1px solid #dee2e6; line-height: 1.5; }
-  .loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; font-weight:bold; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+    padding: 16px;
+    max-width: 1600px;
+    margin: auto;
+    line-height: 1.6;
+    background-color: #f2f4f3;
+    color: #1a1a1a;
+    font-size: 16px;
+  }
+
+  /* ── 載入遮罩 ── */
+  .loading-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(255,255,255,0.85); z-index: 9999;
+    justify-content: center; align-items: center;
+    font-weight: 500; font-size: 1rem; color: #333;
+  }
+
+  /* ── 頁首 ── */
+  .page-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 18px;
+  }
+  .page-header h2 { font-size: 1.6rem; font-weight: 600; color: #1a1a1a; }
+
+  /* ── 說明區 ── */
+  .help-box {
+    background: #fff;
+    border-left: 4px solid #378ADD;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 1rem;
+    color: #444;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .help-box b { color: #1E88E5; }
+  .help-version { text-align: right; font-size: 0.75rem; color: #aaa; margin-top: 10px; }
+
+  /* ── 卡片共用 ── */
+  .card {
+    background: #fff;
+    border: 0.5px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+
+  /* ── 使用者輸入列 ── */
+  .user-row { display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-label { font-size: 15px; color: #1a1a1a; font-weight: 700; }
+  .field-input {
+    padding: 0 12px;
+    height: 48px;
+    border: 1.5px solid #888;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field-input:focus { border-color: #185FA5; box-shadow: 0 0 0 3px rgba(24,95,165,0.15); }
+  .field-input.input-error { border-color: #E24B4A !important; background: #FCEBEB; }
+
+  /* ── 到貨日期 ── */
+  .date-banner {
+    font-size: 14px; color: #555;
+    padding: 8px 14px;
+    background: #f7f9fc;
+    border: 0.5px solid #dce6f0;
+    border-radius: 8px;
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .date-banner b { color: #185FA5; }
+  .badge {
+    font-size: 11px; padding: 3px 9px; border-radius: 999px;
+    font-weight: 500;
+  }
+  .badge-holiday { background: #FAEEDA; color: #633806; }
+  .badge-weekday { background: #EAF3DE; color: #27500A; }
+
+  /* ── 模式切換按鈕 ── */
+  .mode-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .mode-btn {
+    padding: 0 16px; height: 36px;
+    border: 0.5px solid #ccc; border-radius: 999px;
+    font-size: 13px; background: #f5f5f5; color: #555;
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .mode-btn:hover { background: #e8e8e8; }
+  .mode-btn.active { background: #E6F1FB; border-color: #378ADD; color: #0C447C; font-weight: 500; }
+
+  /* ── 表格容器 ── */
+  .tbl-wrap {
+    background: #fff;
+    border: 0.5px solid #e0e0e0;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin-bottom: 14px;
+  }
+  table { border-collapse: collapse; width: 100%; min-width: 1100px; }
+
+  thead th {
+    background: #e8ecef;
+    border-bottom: 2px solid #c5cdd6;
+    padding: 11px 10px 9px;
+    font-size: 13px; font-weight: 700;
+    color: #1a1a1a;
+    white-space: nowrap;
+    text-align: center;
+    position: sticky; top: 0; z-index: 2;
+  }
+  thead th .sub {
+    font-size: 11px; color: #555;
+    display: block; font-weight: 400; margin-top: 3px; line-height: 1.3;
+  }
+  thead th.col-name { text-align: left; padding-left: 16px; }
+
+  tbody tr { border-bottom: 0.5px solid #f0f0f0; transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fafafa; }
+  tbody td { padding: 9px 10px; text-align: center; vertical-align: middle; }
+
+  /* ── 品名欄 ── */
+  .name-cell { font-weight: 600; text-align: left; padding-left: 16px; white-space: nowrap; font-size: 14px; }
+
+  /* ── 數字 input（去箭頭）── */
+  input[type=number] {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { display: none; }
+
+  .num-in {
+    width: 62px; height: 44px;
+    text-align: center; padding: 0 6px;
+    border: 0.5px solid #ddd; border-radius: 8px;
+    font-size: 14px; font-family: inherit;
+    background: #fff; color: #1a1a1a;
+    outline: none; transition: border-color 0.15s;
+  }
+  .num-in:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+  .num-in[readonly] { background: #f5f5f5; color: #999; cursor: not-allowed; border-color: #e8e8e8; }
+
+  /* 藍色＝現場實盤 */
+  .in-actual { background: #E6F1FB; border-color: #85B7EB; color: #0C447C; font-weight: 600; }
+  .in-actual:focus { border-color: #185FA5; box-shadow: 0 0 0 3px rgba(24,95,165,0.15); }
+
+  /* 黃色＝最終叫貨 */
+  .in-final { background: #FAEEDA; border-color: #EF9F27; color: #633806; font-weight: 600; }
+  .in-final:focus { border-color: #BA7517; box-shadow: 0 0 0 3px rgba(186,117,23,0.15); }
+
+  /* ── 理論庫存 ── */
+  .theory-val { font-size: 14px; font-weight: 500; }
+  .theory-neg { background: #FCEBEB; color: #A32D2D; border-radius: 6px; padding: 3px 8px; font-weight: 600; }
+
+  /* ── 差異欄 ── */
+  .diff-wrap { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; }
+  .diff-zero { color: #aaa; font-weight: 400; }
+  .diff-pos { color: #3B6D11; }
+  .diff-neg { color: #993C1D; }
+  .diff-bar { height: 7px; border-radius: 4px; display: inline-block; min-width: 3px; }
+  .bar-pos { background: #639922; }
+  .bar-neg { background: #D85A30; }
+
+  /* ── 文字 input ── */
+  .txt-in {
+    width: 100%; min-width: 70px; height: 44px;
+    padding: 0 8px;
+    border: 0.5px solid #ddd; border-radius: 8px;
+    font-size: 12px; font-family: inherit;
+    background: #fff; color: #1a1a1a;
+    outline: none; transition: border-color 0.15s;
+  }
+  .txt-in:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+  .txt-in.required-error { border-color: #E24B4A !important; background: #FCEBEB; }
+
+  /* ── 到期日專用（固定寬度，不撐滿）── */
+  .txt-batch {
+    width: 85px; height: 44px;
+    padding: 0 6px;
+    border: 0.5px solid #ddd; border-radius: 8px;
+    font-size: 12px; font-family: inherit;
+    background: #fff; color: #1a1a1a;
+    outline: none; transition: border-color 0.15s;
+  }
+  .txt-batch:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+
+  /* ── 備註欄標題紅字 ── */
+  .note-required-label { color: #E24B4A; }
+
+  /* ── 底部操作列 ── */
+  .bottom-bar {
+    background: #fff;
+    border: 0.5px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+    position: sticky; bottom: 12px;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+    margin-bottom: 28px;
+  }
+  .total-label { font-size: 14px; color: #555; }
+  .total-num { font-size: 22px; font-weight: 700; color: #185FA5; margin-left: 8px; }
+  .btn-save {
+    background: #1D9E75; color: #fff;
+    border: none; border-radius: 8px;
+    padding: 0 26px; height: 44px;
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .btn-save:hover { background: #0F6E56; }
+
+  /* ── 統計卡片 ── */
+  .stats-panel { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+  .stats-card {
+    background: #fff; padding: 14px 16px; border-radius: 12px;
+    flex: 1; min-width: 260px;
+    border: 0.5px solid #e0e0e0;
+    border-top: 3px solid #378ADD;
+  }
+  .stats-card.green { border-top-color: #1D9E75; }
+  .stats-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 13px; }
+  .stats-item {
+    background: #f8f9fa; padding: 4px 10px; border-radius: 6px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .stats-item b { color: #185FA5; }
+
+  /* ── 歷史紀錄 ── */
+  .history-card {
+    background: #fff; border: 0.5px solid #e0e0e0;
+    border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 12px; border-left: 4px solid #1D9E75;
+  }
+  .history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .history-head b { font-size: 14px; }
+  .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+  .detail-item {
+    background: #f8f9fa; padding: 9px 12px;
+    border-radius: 8px; border: 0.5px solid #eee;
+    font-size: 12px; line-height: 1.6;
+  }
+  .detail-item .item-name { font-weight: 600; font-size: 13px; }
+  .history-note { font-size: 12px; color: #888; margin-top: 8px; }
+
+  /* ── checkbox ── */
+  input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color: #378ADD; }
+
+  /* ── section 標題 ── */
+  .section-title { font-size: 15px; font-weight: 600; margin: 28px 0 14px; color: #1a1a1a; }
 </style>
 </head>
 
 <body>
 <div id="loading" class="loading-overlay">☁️ 雲端同步中...</div>
 
-<h2>🏪 門市叫貨系統</h2>
+<div class="page-header">
+  <h2>🏪 門市叫貨系統</h2>
+</div>
 
 <div class="help-box">
-  <div style="padding: 10px;">
-    <strong>💡 使用說明：</strong><br>
-    1. <b>自動判斷</b>：依明日日期設定目標基準（五六日為假日模式）。<br>
-    2. <b>強制模式</b>：若遇到補班日、特殊連假，請手動按鈕切換平假日標準。<br>
-    3. <b>理論庫存</b>：自動計算「昨 + 到 - 銷 - 廢」。<br>
-    4. <b>庫存接軌</b>：儲存成功後，今日現場實盤會自動變為明日的昨日庫存並鎖定。<br>
-    5. <b>備註與預訂</b>：備註可輸入「請到貨6入裝厚切火腿共三盒」或「厚切+金沙各三入共2盒」，須手動計算數量並加入最終叫貨量。<br>
-    6. <b>最終叫貨量</b>：黃色格可調整叫貨量，若有預訂請手動累加總顆數。不需補貨請手動改為 0。<br>
-    7. <b>到期日校驗</b>：到期日A + 到期日B 的數量，需等於現場實盤。<br>
-    8. <b>異常原因強制填寫</b>：若現場實盤與理論庫存有落差（不論多或少），請務必填寫備註原因。<br>
-    <div style="text-align:right; font-size:0.8em; color:#999; margin-top: 10px;">版本：04221450 更新日期：2024/04/22</div>
+  <strong>💡 使用說明</strong><br>
+  1. <b>自動判斷</b>：依明日日期設定目標基準（五六日為假日模式）。<br>
+  2. <b>強制模式</b>：若遇到補班日、特殊連假，請手動按鈕切換平假日標準。<br>
+  3. <b>理論庫存</b>：自動計算「昨 + 到 - 銷 - 廢 - 試」。<br>
+  4. <b>備註與預訂</b>：備註可輸入「請到貨6入裝厚切火腿共三盒」或「厚切+金沙各三入共2盒」，須手動計算數量並加入最終叫貨量。<br>
+  5. <b>最終叫貨量</b>：黃色格可調整叫貨量，若有預訂請手動累加總顆數，不需補貨請手動改為 0。<br>
+  6. <b>到期日校驗</b>：到期日A + 到期日B 的數量需等於現場實盤（格式：日期*數量）。<br>
+  7. <b>異常原因強制填寫</b>：庫存有落差時，請務必填寫備註原因。<br>
+  8. <b>庫存接軌</b>：儲存成功後，今日現場實盤會自動變為明日的昨日庫存並鎖定。
+  <div class="help-version">版本：04281428　更新日期：2025/04/28</div>
+</div>
+
+<!-- 使用者資訊 -->
+<div class="card">
+  <div class="user-row">
+    <div class="field-group">
+      <span class="field-label">👤 填單人姓名 <span style="color:#E24B4A;">*</span></span>
+      <input type="text" id="userName" class="field-input" placeholder="請輸入姓名" style="width:160px;" oninput="this.classList.remove('input-error')">
+    </div>
+    <div class="field-group">
+      <span class="field-label">💰 收銀機結帳金額 <span style="color:#E24B4A;">*</span></span>
+      <input type="number" id="cashAmount" class="field-input" placeholder="必填" style="width:140px;" oninput="this.classList.remove('input-error')">
+    </div>
   </div>
 </div>
 
-<div class="user-box">
-  <div>
-    <label style="font-weight:bold;">👤 填單人姓名：</label>
-    <input type="text" id="userName" placeholder="請輸入姓名" style="padding: 8px; width: 150px; border: 1px solid #007bff; border-radius: 4px;">
-  </div>
-  <div>
-    <label style="font-weight:bold;">💰 收銀機結帳金額：</label>
-    <input type="number" id="cashAmount" placeholder="0" style="padding: 8px; width: 120px; border: 1px solid #28a745; border-radius: 4px;">
-  </div>
+<div id="tomorrowInfo" class="date-banner">🚚 預計到貨日期：<b>載入中...</b></div>
+
+<div class="mode-row">
+  <button class="mode-btn active" onclick="setMode('')">🔄 自動判斷模式</button>
+  <button class="mode-btn" onclick="setMode('weekday')">📅 強制平日標準</button>
+  <button class="mode-btn" onclick="setMode('holiday')">🎉 強制假日標準</button>
 </div>
 
-<div id="tomorrowInfo" style="margin: 15px 0; font-weight: bold; font-size: 1.1em;">🚚 預計到貨日期：載入中...</div>
-
-<div style="margin-bottom:15px;">
-  <button onclick="setMode('')">🔄 自動判斷模式</button>
-  <button onclick="setMode('weekday')">📅 強制平日標準</button>
-  <button onclick="setMode('holiday')">🎉 強制假日標準</button>
-</div>
-
-<div class="table-container">
+<!-- 表格 -->
+<div class="tbl-wrap">
   <table>
     <thead>
       <tr>
-        <th style="width: 50px;">上架</th>
-        <th>品項</th>
-        <th>昨日庫存<span class="sub-text">自動對接昨日實盤</span></th>
-        <th>今日到貨<span class="sub-text">需對點進貨單</span></th>
-        <th>今日銷售<span class="sub-text">不含廢/試</span></th>
-        <th>今日報廢<span class="sub-text">損耗數量</span></th>
-        <th>今日試吃<span class="sub-text">公關/試點</span></th>
-        <th>理論庫存<span class="sub-text">(昨+到-銷-廢-試)</span></th>
-        <th>現場實盤<span class="sub-text">(藍色)</span></th>
-        <th>差異數<span class="sub-text">實盤-理論</span></th>
-        <th>建議叫貨<span class="sub-text">標準-實盤</span></th>
-        <th>最終叫貨量<span class="sub-text">(黃色可調整)</span></th>
-        <th style="width: 130px;">備註<span class="sub-text" style="color:#d32f2f;">差異不等於 0 必填</span></th>
-        <th style="width: 140px;">到期日A<span class="sub-text">(日期*顆數)</span></th>
-        <th style="width: 140px;">到期日B<span class="sub-text">(日期*顆數)</span></th>
+        <th style="width:44px;">上架</th>
+        <th class="col-name">品項</th>
+        <th>昨日庫存<span class="sub">自動對接</span></th>
+        <th>今日到貨<span class="sub">對點進貨單</span></th>
+        <th>今日銷售<span class="sub">不含廢/試</span></th>
+        <th>報廢<span class="sub">損耗數量</span></th>
+        <th>試吃<span class="sub">公關/試點</span></th>
+        <th>理論庫存<span class="sub">昨+到-銷-廢-試</span></th>
+        <th>現場實盤<span class="sub">藍色欄位</span></th>
+        <th>差異<span class="sub">實-理</span></th>
+        <th>建議叫貨<span class="sub">標準-實盤</span></th>
+        <th>最終叫貨<span class="sub">黃色可調整</span></th>
+        <th style="min-width:85px;">備註<span class="sub note-required-label">差異≠0 必填</span></th>
+        <th style="width:95px;">到期日A<span class="sub">日期*顆數</span></th>
+        <th style="width:95px;">到期日B<span class="sub">日期*顆數</span></th>
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
   </table>
 </div>
 
-<h3 id="total" style="color:#2e7d32; margin: 20px 0;">最終總叫貨量：0</h3>
-<button class="btn-save" id="saveBtn" onclick="prepareSave()">✅ 確認並儲存今日紀錄</button>
-
-<div class="history-section" style="margin-top:40px;">
-  <h3>📊 叫貨量累計統計</h3>
-  <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:20px;" id="statsPanel"></div>
+<!-- 底部操作列 -->
+<div class="bottom-bar">
+  <div>
+    <span class="total-label">最終總叫貨量</span>
+    <span class="total-num" id="totalNum">0</span>
+  </div>
+  <button class="btn-save" id="saveBtn" onclick="prepareSave()">✅ 確認並儲存今日紀錄</button>
 </div>
 
-<div class="history-section">
-  <h3>📜 雲端叫貨歷史 (最近20筆)</h3>
-  <div id="historyList"></div>
-</div>
+<!-- 統計 -->
+<div class="section-title">📊 叫貨量累計統計</div>
+<div class="stats-panel" id="statsPanel"></div>
+
+<!-- 歷史 -->
+<div class="section-title">📜 雲端叫貨歷史（最近 20 筆）</div>
+<div id="historyList"></div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycby-ZvkQ60TqtgXP_EmEiVmgkMO5t7qaXS6PGenEV1t0-P88cqZ88R_PT0Q8Qu2bh9J5/exec"; 
+const API_URL = "https://script.google.com/macros/s/AKfycby-ZvkQ60TqtgXP_EmEiVmgkMO5t7qaXS6PGenEV1t0-P88cqZ88R_PT0Q8Qu2bh9J5/exec";
 
 const products = [
-  { name: "厚切", weekday: 180, holiday: 200, active: true },
-  { name: "金沙", weekday: 180, holiday: 200, active: true },
-  { name: "草莓優格", weekday: 70, holiday: 85, active: false }, 
-  { name: "芋泥", weekday: 80, holiday: 95, active: true },
-  { name: "草莓吐司", weekday: 70, holiday: 85, active: true }
+  { name: "厚切",          weekday: 180, holiday: 200, active: true  },
+  { name: "金沙",          weekday: 180, holiday: 200, active: true  },
+  { name: "草莓優格",      weekday: 70,  holiday: 85,  active: false },
+  { name: "芋泥",          weekday: 80,  holiday: 95,  active: true  },
+  { name: "草莓吐司",      weekday: 70,  holiday: 85,  active: false },
+  { name: "豬肉鬆",        weekday: 10,  holiday: 10,  active: true  },
+  { name: "芝麻海苔肉鬆",  weekday: 5,   holiday: 5,   active: true  },
+  { name: "寶寶肉鬆",      weekday: 5,   holiday: 5,   active: true  },
+  { name: "150g肉乾",      weekday: 5,   holiday: 5,   active: true  },
+  { name: "150g肉條",      weekday: 5,   holiday: 5,   active: true  },
+  { name: "150g麻辣肉條",  weekday: 5,   holiday: 5,   active: true  },
 ];
 
 let cloudHistory = [], lastCloudStock = [], forceMode = "", manualOverride = {};
 
-function clearZero(el) { if (el.value === "0") el.value = ""; }
-function restoreZero(el) { if (el.value === "") el.value = "0"; }
+function clearZero(el)   { if (el.value === "0") el.value = ""; }
+function restoreZero(el) { if (el.value === "")  el.value = "0"; }
 
 async function fetchCloudData() {
   showLoading(true);
   try {
     const res = await fetch(API_URL);
     cloudHistory = await res.json();
-    if (cloudHistory.length > 0) {
-      lastCloudStock = cloudHistory[0].saveStocks || [];
-    }
+    if (cloudHistory.length > 0) lastCloudStock = cloudHistory[0].saveStocks || [];
     initTable(); renderHistory(); calculateStats();
-  } catch (e) { document.getElementById("historyList").innerText = "連線失敗。"; }
+  } catch (e) {
+    document.getElementById("historyList").innerText = "連線失敗，請重新整理。";
+  }
   showLoading(false);
 }
 
@@ -143,162 +394,306 @@ function initTable() {
   const tbody = document.getElementById("tableBody");
   tbody.innerHTML = "";
   const isLocked = lastCloudStock.length > 0;
+
   products.forEach((p, i) => {
     if (!p.active) return;
     const yVal = (lastCloudStock[i] !== undefined) ? lastCloudStock[i] : 0;
-    tbody.innerHTML += `
-      <tr>
-        <td><input type="checkbox" id="supply${i}" checked onchange="calculate()"></td>
-        <td style="font-weight:bold">${p.name}</td>
-        <td><input type="number" id="y${i}" value="${yVal}" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()" ${isLocked ? 'readonly' : ''}></td>
-        <td><input type="number" id="in${i}" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"></td>
-        <td><input type="number" id="sale${i}" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"></td>
-        <td><input type="number" id="waste${i}" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"></td>
-        <td><input type="number" id="tast${i}" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"></td>
-        <td id="theory${i}">0</td>
-        <td><input type="number" id="act${i}" class="input-actual" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"></td>
-        <td id="diff${i}">0</td>
-        <td id="suggest${i}">0</td>
-        <td><input type="number" id="final${i}" class="input-final" value="0" onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="handleManualFinal(${i})"></td>
-        <td><input type="text" id="note${i}" oninput="this.classList.remove('required-error')"></td>
-        <td><input type="text" id="batch1_${i}" placeholder="例如:5/1*20"></td>
-        <td><input type="text" id="batch2_${i}" placeholder="例如:5/1*20"></td>
-      </tr>`;
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td><input type="checkbox" id="supply${i}" checked onchange="calculate()"></td>
+      <td class="name-cell">${p.name}</td>
+      <td><input type="number" id="y${i}" class="num-in" value="${yVal}"
+          onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"
+          ${isLocked ? 'readonly' : ''}></td>
+      <td><input type="number" id="in${i}" class="num-in" value="0"
+          onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"></td>
+      <td><input type="number" id="sale${i}" class="num-in" value="0"
+          onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"></td>
+      <td><input type="number" id="waste${i}" class="num-in" value="0"
+          onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"></td>
+      <td><input type="number" id="tast${i}" class="num-in" value="0"
+          onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"></td>
+      <td id="theory${i}" class="theory-val">0</td>
+      <td><input type="number" id="act${i}" class="num-in in-actual" value="0"
+          onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="calculate()"></td>
+      <td id="diff${i}"><span class="diff-wrap diff-zero">0</span></td>
+      <td id="suggest${i}">0</td>
+      <td><input type="number" id="final${i}" class="num-in in-final" value="0"
+          onfocus="clearZero(this)" onblur="restoreZero(this)" oninput="handleManualFinal(${i})"></td>
+      <td><input type="text" id="note${i}" class="txt-in" placeholder="備註..."
+          oninput="this.classList.remove('required-error')"></td>
+      <td><input type="text" id="batch1_${i}" class="txt-batch" placeholder="5/1*20"></td>
+      <td><input type="text" id="batch2_${i}" class="txt-batch" placeholder="5/3*10"></td>
+    `;
+    tbody.appendChild(row);
   });
-  updateTomorrowUI(); calculate(true);
+
+  updateTomorrowUI();
+  calculate(true);
 }
 
-function extractAndSumNumbers(str) {
+function extractQty(str) {
   if (!str) return 0;
   str = str.trim();
   if (str.includes('*')) {
     const parts = str.split('*');
-    const num = parseInt(parts[parts.length - 1].replace(/[^\d]/g, ''));
-    return isNaN(num) ? 0 : num;
+    const n = parseInt(parts[parts.length - 1].replace(/[^\d]/g, ''));
+    return isNaN(n) ? 0 : n;
   }
-  const matches = str.match(/\d+/g);
-  return matches ? parseInt(matches[matches.length - 1]) : 0;
+  const m = str.match(/\d+/g);
+  return m ? parseInt(m[m.length - 1]) : 0;
 }
 
 function calculate(forceAll = false) {
-  let finalTotal = 0;
+  let total = 0;
   products.forEach((p, i) => {
     if (!p.active) return;
-    const isS = document.getElementById(`supply${i}`).checked;
-    const y = Number(document.getElementById("y"+i).value), inc = Number(document.getElementById("in"+i).value), 
-          s = Number(document.getElementById("sale"+i).value), w = Number(document.getElementById("waste"+i).value), 
-          t = Number(document.getElementById("tast"+i).value), act = Number(document.getElementById("act"+i).value);
-    const theory = y + inc - s - w - t;
-    const diff = act - theory;
+    const isS  = document.getElementById(`supply${i}`).checked;
+    const y    = +document.getElementById("y"+i).value;
+    const inc  = +document.getElementById("in"+i).value;
+    const sale = +document.getElementById("sale"+i).value;
+    const w    = +document.getElementById("waste"+i).value;
+    const t    = +document.getElementById("tast"+i).value;
+    const act  = +document.getElementById("act"+i).value;
+
+    const theory  = y + inc - sale - w - t;
+    const diff    = act - theory;
     const suggest = isS ? Math.max(0, safety(p) - act) : 0;
-    document.getElementById("theory"+i).innerText = theory;
-    document.getElementById("theory"+i).classList.toggle("theory-neg", theory < 0);
+
+    // 理論庫存
+    const tCell = document.getElementById("theory"+i);
+    tCell.innerHTML = theory < 0
+      ? `<span class="theory-neg">${theory}</span>`
+      : theory;
+
+    // 差異
     const dCell = document.getElementById("diff"+i);
-    dCell.innerText = (diff > 0 ? "+" : "") + diff;
-    dCell.className = diff !== 0 ? "diff-neg" : "";
+    if (diff === 0) {
+      dCell.innerHTML = `<span class="diff-wrap diff-zero">0</span>`;
+    } else {
+      const cls   = diff > 0 ? "diff-pos" : "diff-neg";
+      const bCls  = diff > 0 ? "bar-pos"  : "bar-neg";
+      const bW    = Math.min(Math.abs(diff) * 2, 28);
+      const sign  = diff > 0 ? "+" : "";
+      dCell.innerHTML = `<span class="diff-wrap ${cls}">${sign}${diff}<span class="diff-bar ${bCls}" style="width:${bW}px;"></span></span>`;
+    }
+
     document.getElementById("suggest"+i).innerText = suggest;
-    if (forceAll || !manualOverride[i] || !isS) document.getElementById("final"+i).value = suggest;
-    finalTotal += Number(document.getElementById("final"+i).value);
+    if (forceAll || !manualOverride[i] || !isS) {
+      document.getElementById("final"+i).value = suggest;
+    }
+    total += +document.getElementById("final"+i).value;
   });
-  document.getElementById("total").innerText = `最終總叫貨量：${finalTotal}`;
+  document.getElementById("totalNum").innerText = total;
 }
 
 async function prepareSave() {
   const user = document.getElementById("userName").value.trim();
-  const cash = document.getElementById("cashAmount").value;
-  if(!user) return alert("❌ 請先輸入填單人姓名！");
-  
-  let finalTotal = 0, currentSaveStocks = [], currentDetails = [], validationError = false, batchError = false, errorMsg = "";
-  const info = getTomorrowInfo();
-  
+  const cash = document.getElementById("cashAmount").value.trim();
+  const userEl = document.getElementById("userName");
+  const cashEl = document.getElementById("cashAmount");
+
+  let hasError = false;
+  if (!user) {
+    userEl.classList.add("input-error");
+    hasError = true;
+  } else {
+    userEl.classList.remove("input-error");
+  }
+  if (!cash || cash === "0" || isNaN(Number(cash))) {
+    cashEl.classList.add("input-error");
+    hasError = true;
+  } else {
+    cashEl.classList.remove("input-error");
+  }
+  if (hasError) return alert("❌ 請填寫填單人姓名與收銀機結帳金額！");
+
+  let finalTotal = 0, saveStocks = [], details = [];
+  let validationError = false, batchError = false, batchMsg = "";
+
   products.forEach((p, i) => {
-    const yVal = Number(document.getElementById("y"+i)?.value || 0);
-    if (!p.active) { currentSaveStocks.push(yVal); return; }
-    const act = Number(document.getElementById("act"+i).value);
-    const diff = Number(document.getElementById("diff"+i).innerText);
-    const noteI = document.getElementById("note"+i);
-    const b1 = document.getElementById("batch1_"+i).value.trim(), b2 = document.getElementById("batch2_"+i).value.trim();
+    const yVal = +(document.getElementById("y"+i)?.value || 0);
+    if (!p.active) { saveStocks.push(yVal); return; }
+
+    const act   = +document.getElementById("act"+i).value;
+    const diff  = document.getElementById("diff"+i).innerText.replace(/[^0-9\-+]/g, '') || "0";
+    const diffN = parseInt(diff);
+    const noteEl = document.getElementById("note"+i);
+    const b1 = document.getElementById("batch1_"+i).value.trim();
+    const b2 = document.getElementById("batch2_"+i).value.trim();
     const isS = document.getElementById(`supply${i}`).checked;
 
-    if (isS && diff !== 0 && noteI.value.trim() === "") { noteI.classList.add("required-error"); validationError = true; }
-
-    const b1Qty = extractAndSumNumbers(b1), b2Qty = extractAndSumNumbers(b2);
-    const batchTotal = b1Qty + b2Qty;
-
-    // 💡 修正點：彈出視窗包含具體數字
-    if (act > 0 && batchTotal !== act) { 
-        batchError = true; 
-        errorMsg += `${p.name}: 到期日總數(${batchTotal}) ≠ 實盤數(${act})\n`; 
+    if (isS && diffN !== 0 && noteEl.value.trim() === "") {
+      noteEl.classList.add("required-error");
+      validationError = true;
     }
 
-    const final = Number(document.getElementById("final"+i).value);
-    finalTotal += final; currentSaveStocks.push(act);
-    currentDetails.push({ 
-        name: p.name, y: yVal, inc: Number(document.getElementById("in"+i).value), sale: Number(document.getElementById("sale"+i).value),
-        qty: final, act: act, waste: Number(document.getElementById("waste"+i).value), tast: Number(document.getElementById("tast"+i).value), 
-        diff: diff, b1: b1, b2: b2, note: noteI.value 
+    const bTotal = extractQty(b1) + extractQty(b2);
+    if (act > 0 && bTotal !== act) {
+      batchError = true;
+      batchMsg += `${p.name}：到期日總數(${bTotal}) ≠ 實盤數(${act})\n`;
+    }
+
+    const final = +document.getElementById("final"+i).value;
+    finalTotal += final;
+    saveStocks.push(act);
+    details.push({
+      name: p.name,
+      y: yVal,
+      inc:   +document.getElementById("in"+i).value,
+      sale:  +document.getElementById("sale"+i).value,
+      qty:   final,
+      act,
+      waste: +document.getElementById("waste"+i).value,
+      tast:  +document.getElementById("tast"+i).value,
+      diff:  diffN,
+      b1, b2,
+      note: noteEl.value
     });
   });
 
   if (validationError) return alert("⚠️ 實盤與理論不符，請填寫備註原因！");
-  if (batchError) return alert("⚠️ 到期日數量校驗失敗！\n\n" + errorMsg);
-  if (!confirm("確認儲存？今日結帳金額為 $" + (cash || 0))) return;
+  if (batchError)      return alert("⚠️ 到期日數量校驗失敗！\n\n" + batchMsg);
+  if (!confirm(`確認儲存？今日結帳金額為 $${cash || 0}`)) return;
 
   showLoading(true);
-  const payload = { date: new Date().toString(), amount: finalTotal, cashTotal: cash || 0, status: true, note: `人員:${user}; 結帳:${cash}`, saveStocks: currentSaveStocks, details: currentDetails };
+  const payload = {
+    date: new Date().toString(),
+    amount: finalTotal,
+    cashTotal: cash || 0,
+    status: true,
+    note: `人員:${user}; 結帳:${cash}`,
+    saveStocks,
+    details
+  };
   try {
     await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-    alert("☁️ 同步成功！"); location.reload();
-  } catch (e) { alert("失敗！"); showLoading(false); }
+    alert("☁️ 同步成功！");
+    location.reload();
+  } catch (e) {
+    alert("❌ 儲存失敗，請重試。");
+    showLoading(false);
+  }
 }
 
-function getTomorrowInfo(){
+function getTomorrowInfo() {
   const t = new Date(); t.setDate(t.getDate() + 1);
-  const dayNames = ["週日","週一","週二","週三","週四","週五","週六"];
-  const hDays = [0, 5, 6]; 
-  return { dateStr: (t.getMonth()+1)+"/"+t.getDate()+" ("+dayNames[t.getDay()]+")", isHoliday: hDays.includes(t.getDay()) };
+  const days = ["週日","週一","週二","週三","週四","週五","週六"];
+  return {
+    dateStr: `${t.getMonth()+1}/${t.getDate()} (${days[t.getDay()]})`,
+    isHoliday: [0, 5, 6].includes(t.getDay())
+  };
 }
-function safety(p){ const info = getTomorrowInfo(); return forceMode ? p[forceMode] : (info.isHoliday ? p.holiday : p.weekday); }
-function updateTomorrowUI(){ document.getElementById("tomorrowInfo").innerHTML = `🚚 預計到貨日期：<span style="color:#007bff">${getTomorrowInfo().dateStr}</span>`; }
+
+function safety(p) {
+  const info = getTomorrowInfo();
+  return forceMode ? p[forceMode] : (info.isHoliday ? p.holiday : p.weekday);
+}
+
+function updateTomorrowUI() {
+  const info = getTomorrowInfo();
+  const isH = forceMode === 'holiday' || (!forceMode && info.isHoliday);
+  const badgeCls = isH ? 'badge-holiday' : 'badge-weekday';
+  const badgeTxt = isH ? '假日模式' : '平日模式';
+  document.getElementById("tomorrowInfo").innerHTML =
+    `🚚 預計到貨日期：<b>${info.dateStr}</b> <span class="badge ${badgeCls}">${badgeTxt}</span>`;
+}
+
+function setMode(mode) {
+  forceMode = mode;
+  document.querySelectorAll('.mode-btn').forEach((btn, idx) => {
+    btn.classList.toggle('active', idx === (['', 'weekday', 'holiday'].indexOf(mode)));
+  });
+  updateTomorrowUI();
+  calculate(true);
+}
+
+function handleManualFinal(i) { manualOverride[i] = true; calculate(); }
 
 function calculateStats() {
-  const now = new Date(), oneWeekAgo = new Date(); oneWeekAgo.setDate(now.getDate() - 7);
-  let wSums = {}, mSums = {}, wT = 0, mT = 0;
-  products.forEach(p => { wSums[p.name] = 0; mSums[p.name] = 0; });
+  const now = new Date(), weekAgo = new Date();
+  weekAgo.setDate(now.getDate() - 7);
+  const wS = {}, mS = {};
+  let wT = 0, mT = 0;
+  products.forEach(p => { wS[p.name] = 0; mS[p.name] = 0; });
+
   cloudHistory.forEach(record => {
     const d = new Date(record.date);
-    if (record.details) record.details.forEach(item => {
-      if (wSums.hasOwnProperty(item.name)) {
-        if (d >= oneWeekAgo) { wSums[item.name]+=item.qty; wT+=item.qty; }
-        if (d.getMonth() === now.getMonth()) { mSums[item.name]+=item.qty; mT+=item.qty; }
+    if (!record.details) return;
+    record.details.forEach(item => {
+      if (!wS.hasOwnProperty(item.name)) return;
+      if (d >= weekAgo) { wS[item.name] += item.qty; wT += item.qty; }
+      if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+        mS[item.name] += item.qty; mT += item.qty;
       }
     });
   });
-  document.getElementById("statsPanel").innerHTML = `<div class="stats-card"><h4>📅 本週累計 <span style="color:#007bff">${wT}</span></h4><div class="stats-grid">${products.filter(p=>p.active).map(p=>`<div class="stats-item"><span>${p.name}</span><b>${wSums[p.name]}</b></div>`).join('')}</div></div><div class="stats-card" style="border-top-color:#28a745;"><h4>🗓️ 本月累計 <span style="color:#28a745">${mT}</span></h4><div class="stats-grid">${products.filter(p=>p.active).map(p=>`<div class="stats-item"><span>${p.name}</span><b>${mSums[p.name]}</b></div>`).join('')}</div></div>`;
+
+  const activeProducts = products.filter(p => p.active);
+  document.getElementById("statsPanel").innerHTML = `
+    <div class="stats-card">
+      <h4>📅 本週累計 <span style="color:#185FA5">${wT}</span></h4>
+      <div class="stats-grid">
+        ${activeProducts.map(p => `<div class="stats-item"><span>${p.name}</span><b>${wS[p.name]}</b></div>`).join('')}
+      </div>
+    </div>
+    <div class="stats-card green">
+      <h4>🗓️ 本月累計 <span style="color:#0F6E56">${mT}</span></h4>
+      <div class="stats-grid">
+        ${activeProducts.map(p => `<div class="stats-item"><span>${p.name}</span><b>${mS[p.name]}</b></div>`).join('')}
+      </div>
+    </div>`;
 }
 
 function renderHistory() {
-  const list = document.getElementById("historyList");
-  list.innerHTML = cloudHistory.slice(0, 20).map(item => `
-    <div class="history-card">
-      <div style="display:flex; justify-content:space-between;"><b>📝 ${toTaiwanTime(item.date)}</b> <b>結帳: $${item.cashTotal || 0}</b></div>
-      <div class="detail-grid" style="margin-top:10px;">
-        ${(item.details||[]).map(d => `
+  if (!cloudHistory || cloudHistory.length === 0) {
+    document.getElementById("historyList").innerHTML = '<div style="color:#aaa; padding:16px;">尚無歷史紀錄。</div>';
+    return;
+  }
+
+  document.getElementById("historyList").innerHTML = cloudHistory.slice(0, 20).map(item => {
+    // 防呆：details 可能是 undefined、null、空陣列或解析失敗的字串
+    let details = [];
+    if (Array.isArray(item.details)) {
+      details = item.details;
+    } else if (typeof item.details === 'string') {
+      try { details = JSON.parse(item.details); } catch(e) { details = []; }
+    }
+
+    const detailHTML = details.length > 0
+      ? details.map(d => `
           <div class="detail-item">
-            ${d.name}: <b>${d.qty}</b> <small style="color:blue">實:${d.act||0}</small><br>
-            <small style="color:red">廢:${d.waste||0}/試:${d.tast||0}</small><br>
-            ${d.b1 ? '<small>到期:'+d.b1+'</small>' : ''}${d.b2 ? '<br><small>到期:'+d.b2+'</small>' : ''}
-          </div>
-        `).join('')}
+            <div class="item-name">${d.name || '—'} <b style="color:#1E88E5">${d.qty ?? 0}</b></div>
+            <div style="color:#1a1a1a">實盤：${d.act ?? 0}</div>
+            <div style="color:#E53935">廢：${d.waste ?? 0}　試：${d.tast ?? 0}</div>
+            ${d.diff !== undefined && d.diff !== 0 ? `<div style="color:#993C1D">差異：${d.diff > 0 ? '+' : ''}${d.diff}</div>` : ''}
+            ${d.b1 ? `<div style="color:#555">到期A：${d.b1}</div>` : ''}
+            ${d.b2 ? `<div style="color:#555">到期B：${d.b2}</div>` : ''}
+            ${d.note ? `<div style="color:#185FA5;font-style:italic">${d.note}</div>` : ''}
+          </div>`).join('')
+      : '<div style="color:#bbb; font-size:12px; padding:8px;">此筆無品項明細</div>';
+
+    return `
+    <div class="history-card">
+      <div class="history-head">
+        <b>📝 ${toTWTime(item.date)}</b>
+        <b>總叫貨：${item.amount || 0} 個</b>
       </div>
-      <div style="font-size:0.85em; color:#666; margin-top:8px;">💡 ${item.note || ""}</div>
-    </div>`).join("");
+      <div class="detail-grid">${detailHTML}</div>
+      <div class="history-note">💡 ${item.note || ""}</div>
+    </div>`;
+  }).join('');
 }
 
-function toTaiwanTime(raw) { const d = new Date(raw); return (d.getMonth()+1)+"/"+d.getDate()+" "+d.getHours()+":"+d.getMinutes().toString().padStart(2,'0'); }
-function setMode(mode){ forceMode = mode; updateTomorrowUI(); calculate(true); }
-function handleManualFinal(i) { manualOverride[i] = true; calculate(); }
-function showLoading(show) { document.getElementById("loading").style.display = show ? "flex" : "none"; }
+function toTWTime(raw) {
+  const d = new Date(raw);
+  return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function showLoading(show) {
+  document.getElementById("loading").style.display = show ? "flex" : "none";
+}
+
 window.onload = fetchCloudData;
 </script>
 </body>
