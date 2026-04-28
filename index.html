@@ -44,7 +44,7 @@
     border-radius: 0 8px 8px 0;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
-  .help-box b { color: #1E88E5; }
+  .help-box b { color: #185FA5; }
   .help-version { text-align: right; font-size: 0.75rem; color: #aaa; margin-top: 10px; }
 
   /* ── 卡片共用 ── */
@@ -159,7 +159,7 @@
   .num-in[readonly] { background: #f5f5f5; color: #999; cursor: not-allowed; border-color: #e8e8e8; }
 
   /* 藍色＝現場實盤 */
-  .in-actual { background: #E6F1FB; border-color: #85B7EB; color: #0C447C; font-weight: 600; }
+  .in-actual { background: #E6F1FB; border-color: #85B7EB; color: #1a1a1a; font-weight: 600; }
   .in-actual:focus { border-color: #185FA5; box-shadow: 0 0 0 3px rgba(24,95,165,0.15); }
 
   /* 黃色＝最終叫貨 */
@@ -287,7 +287,7 @@
   6. <b>到期日校驗</b>：到期日A + 到期日B 的數量需等於現場實盤（格式：日期*數量）。<br>
   7. <b>異常原因強制填寫</b>：庫存有落差時，請務必填寫備註原因。<br>
   8. <b>庫存接軌</b>：儲存成功後，今日現場實盤會自動變為明日的昨日庫存並鎖定。
-  <div class="help-version">版本：04281428　更新日期：2025/04/28</div>
+  <div class="help-version">版本：04281000　更新日期：2025/04/28</div>
 </div>
 
 <!-- 使用者資訊 -->
@@ -305,6 +305,12 @@
 </div>
 
 <div id="tomorrowInfo" class="date-banner">🚚 預計到貨日期：<b>載入中...</b></div>
+
+<div class="mode-row">
+  <button class="mode-btn" id="dayBtn1" onclick="setDeliveryDay(1)">📦 明天到貨 +1</button>
+  <button class="mode-btn" id="dayBtn2" onclick="setDeliveryDay(2)">📦 後天到貨 +2</button>
+  <button class="mode-btn" id="dayBtn3" onclick="setDeliveryDay(3)">📦 三天後 +3</button>
+</div>
 
 <div class="mode-row">
   <button class="mode-btn active" onclick="setMode('')">🔄 自動判斷模式</button>
@@ -372,7 +378,7 @@ const products = [
   { name: "150g麻辣肉條",  weekday: 5,   holiday: 5,   active: true  },
 ];
 
-let cloudHistory = [], lastCloudStock = [], forceMode = "", manualOverride = {};
+let cloudHistory = [], lastCloudStock = [], forceMode = "", manualOverride = {}, deliveryDays = 1;
 
 function clearZero(el)   { if (el.value === "0") el.value = ""; }
 function restoreZero(el) { if (el.value === "")  el.value = "0"; }
@@ -516,8 +522,9 @@ async function prepareSave() {
     if (!p.active) { saveStocks.push(yVal); return; }
 
     const act   = +document.getElementById("act"+i).value;
-    const diff  = document.getElementById("diff"+i).innerText.replace(/[^0-9\-+]/g, '') || "0";
-    const diffN = parseInt(diff);
+    const diffSpan = document.querySelector(`#diff${i} .diff-wrap`);
+    const diffText = diffSpan ? diffSpan.innerText.replace(/[^0-9\-+]/g, '') : "0";
+    const diffN = diffText === "" || diffText === "-" ? 0 : parseInt(diffText);
     const noteEl = document.getElementById("note"+i);
     const b1 = document.getElementById("batch1_"+i).value.trim();
     const b2 = document.getElementById("batch2_"+i).value.trim();
@@ -554,7 +561,11 @@ async function prepareSave() {
 
   if (validationError) return alert("⚠️ 實盤與理論不符，請填寫備註原因！");
   if (batchError)      return alert("⚠️ 到期日數量校驗失敗！\n\n" + batchMsg);
-  if (!confirm(`確認儲存？今日結帳金額為 $${cash || 0}`)) return;
+
+  const deliveryInfo = getTomorrowInfo();
+  const deliveryLabel = deliveryDays === 1 ? "明天" : deliveryDays === 2 ? "後天" : `${deliveryDays}天後`;
+  const confirmMsg = `📋 請確認以下資訊後再儲存：\n\n🚚 到貨日期：${deliveryInfo.dateStr}（${deliveryLabel}）\n💰 結帳金額：$${cash}\n📦 總叫貨量：${finalTotal} 個\n\n⚠️ 如到貨日期選錯，請按「取消」退回修改。`;
+  if (!confirm(confirmMsg)) return;
 
   showLoading(true);
   const payload = {
@@ -562,7 +573,7 @@ async function prepareSave() {
     amount: finalTotal,
     cashTotal: cash || 0,
     status: true,
-    note: `人員:${user}; 結帳:${cash}`,
+    note: `人員:${user}; 結帳:${cash}; 到貨日:${deliveryInfo.dateStr}`,
     saveStocks,
     details
   };
@@ -577,12 +588,21 @@ async function prepareSave() {
 }
 
 function getTomorrowInfo() {
-  const t = new Date(); t.setDate(t.getDate() + 1);
+  const t = new Date(); t.setDate(t.getDate() + deliveryDays);
   const days = ["週日","週一","週二","週三","週四","週五","週六"];
   return {
     dateStr: `${t.getMonth()+1}/${t.getDate()} (${days[t.getDay()]})`,
     isHoliday: [0, 5, 6].includes(t.getDay())
   };
+}
+
+function setDeliveryDay(n) {
+  deliveryDays = n;
+  document.querySelectorAll('[id^="dayBtn"]').forEach((btn, idx) => {
+    btn.classList.toggle('active', idx + 1 === n);
+  });
+  updateTomorrowUI();
+  calculate(true);
 }
 
 function safety(p) {
@@ -673,11 +693,16 @@ function renderHistory() {
           </div>`).join('')
       : '<div style="color:#bbb; font-size:12px; padding:8px;">此筆無品項明細</div>';
 
+    const deliveryMatch = (item.note || "").match(/到貨日:([^;]+)/);
+    const deliveryTag = deliveryMatch
+      ? `<span style="background:#E6F1FB; color:#185FA5; font-size:12px; padding:3px 9px; border-radius:999px; font-weight:500;">🚚 到貨：${deliveryMatch[1].trim()}</span>`
+      : "";
+
     return `
     <div class="history-card">
       <div class="history-head">
         <b>📝 ${toTWTime(item.date)}</b>
-        <b>總叫貨：${item.amount || 0} 個</b>
+        <div style="display:flex; align-items:center; gap:8px;">${deliveryTag}<b>總叫貨：${item.amount || 0} 個</b></div>
       </div>
       <div class="detail-grid">${detailHTML}</div>
       <div class="history-note">💡 ${item.note || ""}</div>
@@ -694,7 +719,11 @@ function showLoading(show) {
   document.getElementById("loading").style.display = show ? "flex" : "none";
 }
 
-window.onload = fetchCloudData;
+window.onload = () => {
+  deliveryDays = 1;
+  document.getElementById("dayBtn1").classList.add("active");
+  fetchCloudData();
+};
 </script>
 </body>
 </html>
